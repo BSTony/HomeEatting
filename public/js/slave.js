@@ -143,13 +143,22 @@ function applyState(state) {
   renderInteractiveWidget();
 }
 
+let currentFamilyNav = { householdId: null, memberId: null };
+
+socket.on('family_nav_synced', (nav) => {
+  currentFamilyNav = nav || { householdId: null, memberId: null };
+  if (currentSlide && (currentSlide.type === 'family_tree' || currentSlide.type === 'family')) {
+    renderFamilyTreeWidget();
+  }
+});
+
 // Render Interactive Content depending on Slide Type
 function renderInteractiveWidget() {
   if (!currentSlide) return;
   interactiveArea.innerHTML = '';
 
-  if (currentSlide.type === 'family') {
-    renderFamilyWidget();
+  if (currentSlide.type === 'family_tree' || currentSlide.type === 'family') {
+    renderFamilyTreeWidget();
     return;
   }
 
@@ -174,59 +183,199 @@ function renderInteractiveWidget() {
   }
 }
 
-// 0. Q-Version Family Introduction Widget
-function renderFamilyWidget() {
-  const members = currentSlide.members || [];
+// Q-Version Family Tree & Character Entrance Spotlight
+function renderFamilyTreeWidget() {
+  const households = currentSlide.households || [];
   const container = document.createElement('div');
   container.className = 'family-intro-container';
 
-  let html = `<div class="family-members-grid">`;
-  members.forEach(m => {
-    html += `
-      <div class="family-card" data-id="${m.id}">
-        <div class="family-avatar-wrap" style="background:${m.avatarBg || 'linear-gradient(135deg, #f59e0b, #d97706)'};">
-          <span>${m.avatar || '👤'}</span>
-        </div>
-        <span class="family-tag-pill">${m.tag || m.role}</span>
-        <div class="family-name">${m.name}</div>
-        <div class="family-desc">${m.desc || ''}</div>
+  // Step 1: Showing all households
+  if (!currentFamilyNav.householdId) {
+    let html = `
+      <div style="font-size:13px;font-weight:700;color:var(--accent-gold);margin-bottom:6px;">
+        🏛️ 家族親友譜系（點選家庭查看成員）：
       </div>
+      <div class="tree-overview-container">
     `;
-  });
-  html += `</div>`;
 
-  html += `
-    <button id="btn-cheer-family" class="btn btn-primary btn-cheer-all">
-      <span>👏</span>
-      <span>為全體親友熱烈鼓掌喝采！</span>
-      <span>🎉</span>
-    </button>
-  `;
+    households.forEach(h => {
+      let avatarStackHtml = '';
+      (h.members || []).slice(0, 4).forEach(m => {
+        avatarStackHtml += `
+          <div class="mini-avatar-bubble" style="background:${m.avatarBg || 'var(--accent-gold)'};">
+            ${m.avatar || '👤'}
+          </div>
+        `;
+      });
 
-  container.innerHTML = html;
+      html += `
+        <div class="household-card" data-hid="${h.id}">
+          <div class="household-top-row">
+            <div>
+              <div class="household-title">${h.title}</div>
+              <div class="household-subtitle">${h.subtitle || ''}</div>
+            </div>
+            <span class="badge badge-gold">👥 ${h.memberCount} 位成員</span>
+          </div>
+          <div class="household-members-row">
+            <div class="avatar-stack">
+              ${avatarStackHtml}
+            </div>
+            <span class="household-enter-hint">介紹成員 ➔</span>
+          </div>
+        </div>
+      `;
+    });
 
-  const btnCheer = container.querySelector('#btn-cheer-family');
-  if (btnCheer) {
-    btnCheer.addEventListener('click', () => {
-      fireConfetti();
-      showToast('🎉 感謝您的熱情喝采與滿滿掌聲！');
-      socket.emit('slave_submit_choice', {
-        cheered: true,
-        submittedAt: Date.now()
+    html += `</div>`;
+    container.innerHTML = html;
+
+    container.querySelectorAll('.household-card').forEach(card => {
+      card.addEventListener('click', () => {
+        const hid = card.dataset.hid;
+        currentFamilyNav.householdId = hid;
+        currentFamilyNav.memberId = null;
+        renderFamilyTreeWidget();
       });
     });
+
+    closeSpotlightModal();
+  } else {
+    // Step 2: Inside a specific Household
+    const currentHousehold = households.find(h => h.id === currentFamilyNav.householdId);
+    if (!currentHousehold) {
+      currentFamilyNav.householdId = null;
+      renderFamilyTreeWidget();
+      return;
+    }
+
+    let html = `
+      <div class="household-detail-container">
+        <button id="btn-tree-back" class="btn-back-to-tree">
+          <span>⬅️ 返回家族譜總覽</span>
+        </button>
+        <div class="household-header-banner">
+          <div>
+            <div style="font-size:15px;font-weight:800;color:var(--text-primary);">${currentHousehold.title}</div>
+            <div style="font-size:12px;color:var(--accent-gold);">${currentHousehold.subtitle || ''}</div>
+          </div>
+          <span class="badge badge-gold">共 ${currentHousehold.memberCount} 位成員</span>
+        </div>
+        <div style="font-size:12px;color:var(--text-muted);margin:4px 0 2px;">
+          ✨ 點選任一位家人，為他播放專屬出場動畫：
+        </div>
+        <div class="family-members-grid">
+    `;
+
+    (currentHousehold.members || []).forEach(m => {
+      html += `
+        <div class="family-card" data-mid="${m.id}">
+          <div class="family-avatar-wrap" style="background:${m.avatarBg || 'linear-gradient(135deg, #f59e0b, #d97706)'};">
+            <span>${m.avatar || '👤'}</span>
+          </div>
+          <span class="family-tag-pill">${m.tag || m.role}</span>
+          <div class="family-name">${m.name}</div>
+          <div class="family-desc">${m.title || m.desc || ''}</div>
+          <div style="font-size:10px;color:var(--accent-gold);margin-top:6px;font-weight:bold;">
+            ✨ 出場動畫 ➔
+          </div>
+        </div>
+      `;
+    });
+
+    html += `
+        </div>
+        <button id="btn-cheer-family" class="btn btn-primary btn-cheer-all">
+          <span>👏</span>
+          <span>為全體家人熱烈鼓掌喝采！</span>
+          <span>🎉</span>
+        </button>
+      </div>
+    `;
+
+    container.innerHTML = html;
+
+    const btnBack = container.querySelector('#btn-tree-back');
+    if (btnBack) {
+      btnBack.addEventListener('click', () => {
+        currentFamilyNav.householdId = null;
+        currentFamilyNav.memberId = null;
+        renderFamilyTreeWidget();
+      });
+    }
+
+    const btnCheer = container.querySelector('#btn-cheer-family');
+    if (btnCheer) {
+      btnCheer.addEventListener('click', () => {
+        fireConfetti();
+        showToast('🎉 感謝您的熱情喝采與掌聲！');
+        socket.emit('slave_submit_choice', { cheered: true, submittedAt: Date.now() });
+      });
+    }
+
+    container.querySelectorAll('.family-card').forEach(card => {
+      card.addEventListener('click', () => {
+        const mid = card.dataset.mid;
+        const member = (currentHousehold.members || []).find(m => m.id === mid);
+        if (member) {
+          triggerMemberEntrance(member);
+        }
+      });
+    });
+
+    // Check if synced spotlight member
+    if (currentFamilyNav.memberId) {
+      const activeMember = (currentHousehold.members || []).find(m => m.id === currentFamilyNav.memberId);
+      if (activeMember) {
+        triggerMemberEntrance(activeMember);
+      }
+    }
   }
 
-  container.querySelectorAll('.family-card').forEach(card => {
-    card.addEventListener('click', () => {
-      card.style.transform = 'scale(1.08)';
-      setTimeout(() => { card.style.transform = ''; }, 300);
-      const name = card.querySelector('.family-name')?.textContent || '';
-      showToast(`💖 給「${name}」獻上最熱烈的掌聲！`);
-    });
-  });
-
   interactiveArea.appendChild(container);
+}
+
+// Member Spotlight Modal Trigger
+function triggerMemberEntrance(member) {
+  const modal = document.getElementById('spotlight-modal');
+  if (!modal) return;
+
+  const emoji = document.getElementById('spotlight-avatar-emoji');
+  const wrap = document.getElementById('spotlight-avatar-wrap');
+  const name = document.getElementById('spotlight-name');
+  const role = document.getElementById('spotlight-role-badge');
+  const title = document.getElementById('spotlight-title-text');
+  const quote = document.getElementById('spotlight-quote-bubble');
+
+  if (emoji) emoji.textContent = member.avatar || '👤';
+  if (wrap) wrap.style.background = member.avatarBg || 'var(--accent-gold)';
+  if (name) name.textContent = member.name;
+  if (role) role.textContent = member.role + (member.tag ? ` • ${member.tag}` : '');
+  if (title) title.textContent = member.title || member.desc || '';
+  if (quote) quote.textContent = member.quote || '「恭喜東霖與芷鈞永結同心，永遠幸福！」';
+
+  modal.classList.add('show');
+  fireConfetti();
+
+  const btnCheer = document.getElementById('btn-spotlight-cheer');
+  if (btnCheer) {
+    btnCheer.onclick = () => {
+      fireConfetti();
+      showToast(`💖 給「${member.name}」獻上最熱烈的掌聲！`);
+    };
+  }
+
+  const btnClose = document.getElementById('btn-close-spotlight');
+  if (btnClose) {
+    btnClose.onclick = () => {
+      closeSpotlightModal();
+    };
+  }
+}
+
+function closeSpotlightModal() {
+  const modal = document.getElementById('spotlight-modal');
+  if (modal) modal.classList.remove('show');
 }
 
 // 1. Poll Widget

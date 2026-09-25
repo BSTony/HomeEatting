@@ -330,3 +330,290 @@ body {
   gap: 8px;
 }
 
+/* =========================================
+   GENEALOGY FAMILY TREE & ENTRANCE ANIMATION
+   ========================================= */
+
+/* Household Cards in Tree Overview */
+.tree-overview-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.household-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 16px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  cursor: pointer;
+  transition: all var(--transition-bounce);
+  position: relative;
+  overflow: hidden;
+  user-select: none;
+}
+
+.household-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(to bottom, var(--accent-gold), #ef4444);
+}
+
+.household-card:active {
+  transform: scale(0.98);
+}
+
+.household-card:hover {
+  background: rgba(245, 158, 11, 0.1);
+  border-color: var(--accent-gold);
+  box-shadow: 0 8px 24px rgba(245, 158, 11, 0.2);
+}
+
+.household-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.household-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.household-subtitle {
+  font-size: 12px;
+  color: var(--accent-gold-light);
+}
+
+.household-members-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+
+.avatar-stack {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mini-avatar-bubble {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.household-enter-hint {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent-gold);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Inside Household Detail View */
+.household-detail-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.btn-back-to-tree {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  cursor: pointer;
+  width: fit-content;
+  margin-bottom: 4px;
+  transition: all var(--transition-fast);
+}
+
+.btn-back-to-tree:active {
+  transform: scale(0.95);
+  background: rgba(245, 158, 11, 0.2);
+}
+
+.household-header-banner {
+  padding: 12px 16px;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(239, 68, 68, 0.1));
+  border: 1px solid var(--accent-gold-glow);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* =========================================
+   CHARACTER ENTRANCE SPOTLIGHT MODAL
+   ========================================= */
+.spotlight-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+  padding: 20px;
+}
+
+.spotlight-modal-overlay.show {
+  display: flex;
+  animation: spotlightFadeIn 0.3s ease-out;
+}
+
+@keyframes spotlightFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.spotlight-card {
+  width: 100%;
+  max-width: 420px;
+  background: linear-gradient(180deg, #1e2638, #111726);
+  border: 2px solid var(--accent-gold);
+  box-shadow: 0 0 50px rgba(245, 158, 11, 0.4), 0 20px 40px rgba(0, 0, 0, 0.8);
+  border-radius: var(--radius-lg);
+  padding: 28px 20px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  animation: heroCardEntrance 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes heroCardEntrance {
+  0% { transform: scale(0.6) translateY(40px); opacity: 0; }
+  70% { transform: scale(1.05) translateY(-5px); opacity: 1; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+/* Light Ray Background */
+.spotlight-light-rays {
+  position: absolute;
+  top: -100px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.25) 0%, transparent 70%);
+  pointer-events: none;
+  animation: pulseRay 2s infinite alternate ease-in-out;
+}
+
+@keyframes pulseRay {
+  from { transform: translateX(-50%) scale(0.9); opacity: 0.6; }
+  to { transform: translateX(-50%) scale(1.2); opacity: 1; }
+}
+
+.spotlight-header-tag {
+  display: inline-block;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  color: var(--accent-gold-light);
+  background: rgba(245, 158, 11, 0.18);
+  border: 1px solid var(--accent-gold);
+  padding: 4px 16px;
+  border-radius: var(--radius-full);
+  margin-bottom: 18px;
+  box-shadow: 0 0 16px var(--accent-gold-glow);
+}
+
+/* Big Hero Avatar Bounce Animation */
+.spotlight-avatar-wrap {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  margin: 0 auto 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 52px;
+  border: 4px solid #ffffff;
+  box-shadow: 0 0 30px rgba(245, 158, 11, 0.6);
+  animation: heroAvatarBounce 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes heroAvatarBounce {
+  0% { transform: scale(0) rotate(-30deg); }
+  60% { transform: scale(1.2) rotate(10deg); }
+  80% { transform: scale(0.95) rotate(-5deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+.spotlight-name {
+  font-size: 24px;
+  font-weight: 900;
+  color: #ffffff;
+  margin-bottom: 4px;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+
+.spotlight-role-badge {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent-gold-light);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border-color);
+  padding: 3px 12px;
+  border-radius: var(--radius-full);
+  margin-bottom: 12px;
+}
+
+.spotlight-title-text {
+  font-size: 14px;
+  font-weight: 700;
+  color: #cbd5e1;
+  margin-bottom: 14px;
+}
+
+/* Signature Quote Balloon */
+.spotlight-quote-bubble {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1.5px dashed var(--accent-gold);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  font-size: 14px;
+  color: #fef08a;
+  line-height: 1.6;
+  font-weight: 600;
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.spotlight-actions {
+  display: flex;
+  gap: 10px;
+}
+
+

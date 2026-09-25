@@ -51,6 +51,7 @@ try {
 let currentIndex = 0;
 let allowSelection = true;
 let showResults = false;
+let familyTreeNav = { householdId: null, memberId: null };
 
 // Submissions store: { [slideId]: [ { socketId, guestName, data, timestamp } ] }
 let submissions = {};
@@ -140,6 +141,7 @@ function getMasterDashboardPayload() {
     currentSlide,
     allowSelection,
     showResults,
+    familyTreeNav,
     summary: slideId ? getSlideSummary(slideId) : null,
     connectedCount: connectedClients.size,
     slavesCount: Array.from(connectedClients.values()).filter(c => c.role === 'slave').length,
@@ -160,6 +162,7 @@ function getSlavePayload(socketId) {
     currentSlide,
     allowSelection,
     showResults,
+    familyTreeNav,
     summary: showResults && slideId ? getSlideSummary(slideId) : null,
     hasSubmitted: !!userSubmissions,
     mySubmission: userSubmissions ? userSubmissions.data : null
@@ -275,6 +278,7 @@ io.on('connection', (socket) => {
 
     if (typeof index === 'number' && index >= 0 && index < slides.length) {
       currentIndex = index;
+      familyTreeNav = { householdId: null, memberId: null };
       const currentSlide = slides[currentIndex];
 
       // Broadcast to all slaves
@@ -284,12 +288,23 @@ io.on('connection', (socket) => {
         currentSlide,
         allowSelection,
         showResults,
+        familyTreeNav,
         summary: showResults ? getSlideSummary(currentSlide.id) : null
       });
 
       // Update masters with full telemetry
       io.to('master_room').emit('master_telemetry_updated', getMasterDashboardPayload());
     }
+  });
+
+  // Master navigates within family tree (select household or spotlight person)
+  socket.on('master_family_nav', ({ householdId = null, memberId = null }) => {
+    const client = connectedClients.get(socket.id);
+    if (!client || client.role !== 'master') return;
+
+    familyTreeNav = { householdId, memberId };
+    io.emit('family_nav_synced', familyTreeNav);
+    io.to('master_room').emit('master_telemetry_updated', getMasterDashboardPayload());
   });
 
   // Master toggles interactive selection (allows/locks slave choices)
