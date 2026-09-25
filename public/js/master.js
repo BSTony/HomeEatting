@@ -88,6 +88,13 @@ pinInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') btnLogin.click();
 });
 
+// Auto-login on connect
+socket.on('connect', () => {
+  if (savedPin) {
+    tryJoinMaster(savedPin);
+  }
+});
+
 // Auto-login if previously saved
 if (savedPin) {
   tryJoinMaster(savedPin);
@@ -104,12 +111,111 @@ socket.on('auth_error', (data) => {
 });
 
 socket.on('master_init', (data) => {
-  sessionStorage.setItem('feast_master_pin', savedPin);
+  sessionStorage.setItem('feast_master_pin', savedPin || '8888');
   authModal.classList.remove('show');
   currentSlides = data.slides || [];
   updateDashboard(data.dashboard);
   renderSlideDeck();
 });
+
+// Slide Management: Add and Delete Modals
+const addSlideModal = document.getElementById('add-slide-modal');
+const btnOpenAddSlide = document.getElementById('btn-add-slide-modal');
+const btnCancelAddSlide = document.getElementById('btn-cancel-add-slide');
+const btnConfirmAddSlide = document.getElementById('btn-confirm-add-slide');
+const newSlideType = document.getElementById('new-slide-type');
+const newSlideTitle = document.getElementById('new-slide-title');
+const newSlideSubtitle = document.getElementById('new-slide-subtitle');
+const newSlideContent = document.getElementById('new-slide-content');
+const newSlideOptionsGroup = document.getElementById('new-slide-options-group');
+const newSlideOptions = document.getElementById('new-slide-options');
+const newSlideImage = document.getElementById('new-slide-image');
+const btnDeleteCurrentSlide = document.getElementById('btn-delete-current-slide');
+
+if (btnOpenAddSlide) {
+  btnOpenAddSlide.addEventListener('click', () => {
+    addSlideModal.classList.add('show');
+    newSlideTitle.value = '';
+    newSlideSubtitle.value = '';
+    newSlideContent.value = '';
+    newSlideTitle.focus();
+  });
+}
+
+if (btnCancelAddSlide) {
+  btnCancelAddSlide.addEventListener('click', () => {
+    addSlideModal.classList.remove('show');
+  });
+}
+
+if (newSlideType) {
+  newSlideType.addEventListener('change', () => {
+    if (newSlideType.value === 'poll') {
+      newSlideOptionsGroup.style.display = 'block';
+    } else {
+      newSlideOptionsGroup.style.display = 'none';
+    }
+  });
+}
+
+if (btnConfirmAddSlide) {
+  btnConfirmAddSlide.addEventListener('click', () => {
+    const type = newSlideType.value;
+    const title = newSlideTitle.value.trim() || '自訂展示頁面';
+    const subtitle = newSlideSubtitle.value.trim();
+    const content = newSlideContent.value.trim();
+    const imageUrl = newSlideImage.value.trim();
+
+    const slideObj = {
+      id: 'custom-' + Date.now(),
+      type,
+      title,
+      subtitle,
+      badge: type === 'poll' ? '即時票選' : (type === 'rating' ? '心得回饋' : '特別推薦'),
+      content,
+      imageUrl
+    };
+
+    if (type === 'poll') {
+      const lines = newSlideOptions.value.split('\n').map(s => s.trim()).filter(Boolean);
+      slideObj.options = lines.length > 0
+        ? lines.map((text, i) => ({ id: 'opt-' + (i + 1), text }))
+        : [
+            { id: 'opt-1', text: '選項一：贊成' },
+            { id: 'opt-2', text: '選項二：保留' }
+          ];
+    }
+
+    currentSlides.push(slideObj);
+    socket.emit('master_update_slides', {
+      newSlides: currentSlides,
+      targetIndex: currentSlides.length - 1
+    });
+
+    addSlideModal.classList.remove('show');
+    showToast('✅ 已成功新增自訂頁面！');
+  });
+}
+
+if (btnDeleteCurrentSlide) {
+  btnDeleteCurrentSlide.addEventListener('click', () => {
+    if (currentSlides.length <= 1) {
+      alert('至少需要保留一張投影片！');
+      return;
+    }
+    const currentSlide = currentSlides[currentIndex];
+    const title = currentSlide ? currentSlide.title : `第 ${currentIndex + 1} 頁`;
+    if (confirm(`確定要刪除「${title}」嗎？`)) {
+      currentSlides.splice(currentIndex, 1);
+      const targetIndex = Math.max(0, currentIndex - 1);
+      socket.emit('master_update_slides', {
+        newSlides: currentSlides,
+        targetIndex
+      });
+      showToast('🗑️ 已刪除該頁投影片');
+    }
+  });
+}
 
 socket.on('master_telemetry_updated', (dashboard) => {
   updateDashboard(dashboard);

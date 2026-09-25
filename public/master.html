@@ -121,11 +121,19 @@
 
           <!-- Tab 2: Slide Deck List -->
           <div id="tab-deck" class="tab-pane">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:8px;flex-wrap:wrap;">
               <span style="font-size:13px;font-weight:700;color:var(--text-secondary);">點擊即可直接切換：</span>
-              <button id="btn-reset-preset" class="btn btn-secondary" style="font-size:11px;padding:4px 10px;">
-                🔄 還原家宴範本
-              </button>
+              <div style="display:flex;gap:6px;">
+                <button id="btn-add-slide-modal" class="btn btn-primary" style="font-size:11px;padding:4px 10px;">
+                  ➕ 新增自訂頁
+                </button>
+                <button id="btn-delete-current-slide" class="btn btn-secondary" style="font-size:11px;padding:4px 8px;color:var(--accent-red);" title="刪除目前選中的投影片">
+                  🗑️ 刪除此頁
+                </button>
+                <button id="btn-reset-preset" class="btn btn-secondary" style="font-size:11px;padding:4px 8px;">
+                  🔄 重設範本
+                </button>
+              </div>
             </div>
             <div id="slide-deck-list" class="slide-deck-list"></div>
           </div>
@@ -194,6 +202,49 @@
       <div style="display:flex;gap:10px;">
         <button id="btn-close-broadcast" class="btn btn-secondary" style="flex:1;">取消</button>
         <button id="btn-send-broadcast" class="btn btn-primary" style="flex:1;">立即發送</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Slide Modal -->
+  <div id="add-slide-modal" class="modal-overlay">
+    <div class="modal-card" style="max-width: 520px; text-align: left;">
+      <h2 style="font-size:20px;font-weight:800;color:var(--accent-gold-light);margin-bottom:16px;">
+        ➕ 新增投影片／互動卡片
+      </h2>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div>
+          <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px;">頁面類型：</label>
+          <select id="new-slide-type" class="input-field" style="margin-bottom:0;">
+            <option value="showcase">🖼️ 一般展示卡片 (圖片+說明)</option>
+            <option value="poll">📊 互動票選 (即時單選/多選)</option>
+            <option value="rating">⭐ 滿意度打星與祝福</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px;">標題：</label>
+          <input type="text" id="new-slide-title" class="input-field" placeholder="例如：下一道私房料理、趣味問答" style="margin-bottom:0;" />
+        </div>
+        <div>
+          <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px;">副標題／英文：</label>
+          <input type="text" id="new-slide-subtitle" class="input-field" placeholder="可選填..." style="margin-bottom:0;" />
+        </div>
+        <div>
+          <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px;">詳細內容／題目敘述：</label>
+          <textarea id="new-slide-content" class="input-field" rows="3" placeholder="輸入文字內容..." style="margin-bottom:0;resize:none;"></textarea>
+        </div>
+        <div id="new-slide-options-group" style="display:none;">
+          <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px;">選項列表 (一行一個)：</label>
+          <textarea id="new-slide-options" class="input-field" rows="3" placeholder="選項 A&#10;選項 B&#10;選項 C" style="margin-bottom:0;resize:none;"></textarea>
+        </div>
+        <div>
+          <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px;">背景圖片 URL：</label>
+          <input type="text" id="new-slide-image" class="input-field" placeholder="https://images.unsplash.com/..." value="https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=1200&q=80" style="margin-bottom:0;" />
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:20px;">
+        <button id="btn-cancel-add-slide" class="btn btn-secondary" style="flex:1;">取消</button>
+        <button id="btn-confirm-add-slide" class="btn btn-primary" style="flex:1;">確認新增</button>
       </div>
     </div>
   </div>

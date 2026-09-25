@@ -406,6 +406,10 @@
 
 /* Login Modal */
 #login-modal {
+  display: none;
+}
+
+#login-modal.show {
   display: flex;
 }
 
