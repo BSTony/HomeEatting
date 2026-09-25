@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🏮 家宴主控台 - 即時跨螢幕同步系統</title>
+  <link rel="stylesheet" href="/css/base.css" />
+  <link rel="stylesheet" href="/css/master.css" />
+</head>
+<body>
+  <div class="ambient-glow"></div>
+  <canvas id="confetti-canvas"></canvas>
+  <div id="broadcast-toast"></div>
+
+  <!-- Master Main Layout -->
+  <div class="master-container">
+    <!-- Top Header -->
+    <header class="master-header">
+      <div class="brand-section">
+        <div class="brand-title">
+          <span>🏮</span>
+          <span>家宴同步看板・主控指揮台</span>
+        </div>
+        <div class="header-status">
+          <div class="status-chip">
+            <span class="live-dot"></span>
+            <span>雲端同步運作中</span>
+          </div>
+          <div class="status-chip badge-gold client-count-badge">0 賓客</div>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button id="btn-confetti" class="btn btn-secondary" title="施放全螢幕歡慶彩帶">
+          <span>🎊</span>
+          <span>施放彩帶</span>
+        </button>
+        <button id="btn-broadcast" class="btn btn-secondary" title="向所有裝置發送緊急廣播">
+          <span>📢</span>
+          <span>全場廣播</span>
+        </button>
+        <button id="btn-open-qr" class="btn btn-primary" title="開啟連線 QR Code">
+          <span>📱</span>
+          <span>賓客連線碼</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="master-main">
+      <!-- Left Column: Stage Preview Mirror -->
+      <section class="stage-column">
+        <div class="stage-card glass-panel">
+          <div class="stage-header-bar">
+            <div style="display:flex;align-items:center;gap:12px;">
+              <span class="badge badge-gold" id="stage-badge">歡迎</span>
+              <span id="slide-counter" class="slide-counter-badge">第 1 / 5 頁</span>
+            </div>
+            <div style="font-size:12px;color:var(--text-muted);">
+              💡 提示：可直接按鍵盤 ← / → 翻頁
+            </div>
+          </div>
+
+          <!-- Screen Mirror -->
+          <div class="stage-content-wrapper">
+            <img id="stage-banner" class="stage-banner-img" src="" alt="slide-banner" />
+            <div class="stage-body">
+              <div id="stage-subtitle" class="stage-subtitle"></div>
+              <h1 id="stage-title" class="stage-title">載入中...</h1>
+              <div id="stage-desc" class="stage-desc"></div>
+              <div id="stage-interactive" class="stage-interactive-preview"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stage Bottom Controller Toolbar -->
+        <div class="stage-controls-bar">
+          <div class="nav-buttons-group">
+            <button id="btn-prev" class="btn btn-secondary">
+              <span>◀</span>
+              <span>上一頁</span>
+            </button>
+            <button id="btn-next" class="btn btn-primary">
+              <span>下一頁</span>
+              <span>▶</span>
+            </button>
+          </div>
+
+          <div class="stage-switch-toggles">
+            <label class="toggle-label" title="開啟後，從屬端即可點擊選項或送出菜單">
+              <input type="checkbox" id="toggle-allow-selection" checked />
+              <span>開放賓客作答／選擇</span>
+            </label>
+            <label class="toggle-label" title="開啟後，從屬端將即時看見票數百分比或菜單榜">
+              <input type="checkbox" id="toggle-show-results" />
+              <span>向賓客公開統計</span>
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right Column: Sidebar (Tabs) -->
+      <aside class="sidebar-column glass-panel">
+        <div class="sidebar-tabs">
+          <button class="tab-btn active" data-tab="tab-stats">📊 即時反饋</button>
+          <button class="tab-btn" data-tab="tab-deck">📑 投影片</button>
+          <button class="tab-btn" data-tab="tab-clients">👥 在線賓客</button>
+          <button class="tab-btn" data-tab="tab-settings">⚙️ 設定</button>
+        </div>
+
+        <div class="tab-content-area">
+          <!-- Tab 1: Live Stats -->
+          <div id="tab-stats" class="tab-pane active">
+            <div id="stats-panel">
+              <div class="stat-summary-card" style="text-align:center;padding:24px;">
+                <div style="font-size:32px;">⏳</div>
+                <div style="margin-top:8px;font-weight:700;">等待資料同步中...</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab 2: Slide Deck List -->
+          <div id="tab-deck" class="tab-pane">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+              <span style="font-size:13px;font-weight:700;color:var(--text-secondary);">點擊即可直接切換：</span>
+              <button id="btn-reset-preset" class="btn btn-secondary" style="font-size:11px;padding:4px 10px;">
+                🔄 還原家宴範本
+              </button>
+            </div>
+            <div id="slide-deck-list" class="slide-deck-list"></div>
+          </div>
+
+          <!-- Tab 3: Connected Clients List -->
+          <div id="tab-clients" class="tab-pane">
+            <div style="font-size:13px;font-weight:700;color:var(--text-secondary);margin-bottom:8px;">
+              連線裝置監控：
+            </div>
+            <div id="clients-list"></div>
+          </div>
+
+          <!-- Tab 4: Settings & Quick Help -->
+          <div id="tab-settings" class="tab-pane">
+            <div class="stat-summary-card">
+              <div class="stat-header">
+                <span>🔐 主控金鑰資訊</span>
+              </div>
+              <div style="font-size:13px;color:var(--text-secondary);line-height:1.7;">
+                預設授權密碼：<code style="background:rgba(255,255,255,0.1);padding:2px 8px;border-radius:4px;color:var(--accent-gold);">8888</code>
+                <br />
+                在 Render 部署時可自訂環境變數：
+                <code style="background:rgba(255,255,255,0.1);padding:2px 8px;border-radius:4px;color:var(--text-primary);display:inline-block;margin-top:4px;">MASTER_PIN=您的密碼</code>
+              </div>
+            </div>
+
+            <div class="stat-summary-card">
+              <div class="stat-header">
+                <span>🌐 連線網址快捷分享</span>
+              </div>
+              <p style="font-size:13px;color:var(--text-secondary);margin-bottom:10px;">
+                直接複製賓客端網址發至 LINE 群組或現場投螢幕：
+              </p>
+              <input type="text" id="share-link-input" class="input-field" readonly style="font-size:12px;" />
+              <button class="btn btn-secondary" style="width:100%;font-size:13px;" onclick="navigator.clipboard.writeText(document.getElementById('share-link-input').value); alert('已複製賓客連結！');">
+                📋 複製賓客連結
+              </button>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <!-- QR Code Modal -->
+  <div id="qr-modal" class="modal-overlay">
+    <div class="modal-card">
+      <h2 style="font-size:20px;font-weight:800;color:var(--accent-gold-light);">📱 掃描加入盛宴</h2>
+      <p style="font-size:13px;color:var(--text-secondary);margin-top:4px;">
+        在場賓客使用手機相機掃描即可同步畫面與互動
+      </p>
+      <div id="qr-code-box" class="qr-box"></div>
+      <div id="slave-url-display" style="font-size:12px;color:var(--text-muted);word-break:break-all;margin-bottom:16px;"></div>
+      <button id="btn-close-qr" class="btn btn-primary" style="width:100%;">關閉</button>
+    </div>
+  </div>
+
+  <!-- Broadcast Notice Modal -->
+  <div id="broadcast-modal" class="modal-overlay">
+    <div class="modal-card">
+      <h2 style="font-size:20px;font-weight:800;color:var(--accent-gold-light);">📢 全場即時廣播</h2>
+      <p style="font-size:13px;color:var(--text-secondary);margin-top:4px;margin-bottom:16px;">
+        輸入訊息後將於所有連線手機與展示螢幕上方跳出通知
+      </p>
+      <input type="text" id="broadcast-input" class="input-field" placeholder="例如：主廚即將上菜，請各位就座！" />
+      <div style="display:flex;gap:10px;">
+        <button id="btn-close-broadcast" class="btn btn-secondary" style="flex:1;">取消</button>
+        <button id="btn-send-broadcast" class="btn btn-primary" style="flex:1;">立即發送</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Master Authentication Modal -->
+  <div id="login-modal" class="modal-overlay show">
+    <div class="modal-card login-card">
+      <div style="font-size:48px;margin-bottom:12px;">🏮</div>
+      <h2 style="font-size:22px;font-weight:800;color:var(--text-primary);margin-bottom:8px;">
+        家宴主控身分認證
+      </h2>
+      <p style="font-size:14px;color:var(--text-secondary);margin-bottom:20px;">
+        請輸入主控端授權密碼以取得操作權限
+      </p>
+      <input type="password" id="pin-input" class="input-field" placeholder="預設密碼：8888" />
+      <div id="auth-error" style="color:var(--accent-red);font-size:13px;margin-bottom:12px;display:none;"></div>
+      <button id="btn-login" class="btn btn-primary" style="width:100%;padding:14px;">
+        進入主控台
+      </button>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="/js/presets.js"></script>
+  <script src="/js/master.js"></script>
+  <script>
+    document.getElementById('share-link-input').value = `${window.location.origin}/slave.html`;
+  </script>
+</body>
+</html>

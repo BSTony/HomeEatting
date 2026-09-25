@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>🏮 家宴互動同步螢幕</title>
+  <link rel="stylesheet" href="/css/base.css" />
+  <link rel="stylesheet" href="/css/slave.css" />
+</head>
+<body>
+  <div class="ambient-glow"></div>
+  <canvas id="confetti-canvas"></canvas>
+  <div id="broadcast-toast"></div>
+
+  <div class="slave-app">
+    <!-- Sticky Header -->
+    <header class="slave-header">
+      <div class="slave-brand">
+        <span style="font-size:18px;">🏮</span>
+        <div class="slave-brand-title" id="slave-brand-title">闔家盛宴</div>
+      </div>
+
+      <div class="slave-user-chip" id="slave-guest-chip" title="點擊修改您的稱呼">
+        <span class="live-dot"></span>
+        <span id="guest-name-display">貴賓</span>
+        <span style="font-size:10px;color:var(--text-muted);">✎</span>
+      </div>
+    </header>
+
+    <!-- Main Synchronized Card Container -->
+    <main class="slave-container">
+      <div class="slave-card">
+        <!-- Banner Image with Badge -->
+        <div class="slave-banner-wrap" id="slave-banner-wrap">
+          <img id="slave-banner" class="slave-banner-img" src="" alt="feast-banner" />
+          <div class="slave-badge-overlay">
+            <span class="badge badge-gold" id="slave-badge">同步中</span>
+          </div>
+        </div>
+
+        <!-- Content Area -->
+        <div class="slave-content">
+          <div class="slave-subtitle" id="slave-subtitle"></div>
+          <h1 class="slave-title" id="slave-title">等待主控端廣播...</h1>
+          <p class="slave-desc" id="slave-desc"></p>
+
+          <!-- Dynamic Interactive Widget (Poll / Menu / Lucky Wheel / Rating) -->
+          <div id="slave-interactive-area"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Name Edit Modal -->
+  <div id="name-modal" class="modal-overlay">
+    <div class="modal-card">
+      <h3 style="font-size:18px;font-weight:700;color:var(--text-primary);margin-bottom:6px;">
+        自訂您的稱呼
+      </h3>
+      <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">
+        方便主控端與全場親友識別您的選擇與投票
+      </p>
+      <input type="text" id="name-input" class="input-field" placeholder="例如：大伯、小美、阿偉" maxlength="15" />
+      <button id="btn-save-name" class="btn btn-primary" style="width:100%;padding:12px;">
+        確認儲存
+      </button>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/slave.js"></script>
+</body>
+</html>

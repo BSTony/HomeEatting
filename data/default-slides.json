@@ -1,0 +1,89 @@
+[
+  {
+    "id": "slide-1",
+    "type": "showcase",
+    "title": "🏮 闔家歡聚・盛宴開席",
+    "subtitle": "Warm Family Gathering Feast",
+    "badge": "歡迎入場",
+    "content": "歡迎各位家人與好友蒞臨！今晚讓我們放下忙碌，共享美味佳餚與溫馨歡笑。\n手機連線後將自動同步主控螢幕，並可即時參與互動點餐與抽獎！",
+    "imageUrl": "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1200&q=80",
+    "theme": "amber"
+  },
+  {
+    "id": "slide-2",
+    "type": "menu",
+    "title": "📋 今晚家宴特選菜單",
+    "subtitle": "Chef's Special Tasting Menu",
+    "badge": "點選菜色",
+    "content": "請在手機端勾選您最期待品嚐或想加點的菜色，主控端將即時彙整統計送進廚房！",
+    "imageUrl": "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=1200&q=80",
+    "menuCategories": [
+      {
+        "category": "開胃前菜",
+        "items": [
+          { "id": "m1", "name": "金沙烏魚子脆餅", "desc": "嚴選野生烏魚子佐青蘋果片" },
+          { "id": "m2", "name": "松露野菇炙干貝", "desc": "北海道生食級干貝與黑松露醬" }
+        ]
+      },
+      {
+        "category": "主廚大菜",
+        "items": [
+          { "id": "m3", "name": "特級花雕醉仙雞", "desc": "十年陳釀花雕酒溫潤浸漬" },
+          { "id": "m4", "name": "古法清蒸龍虎斑", "desc": "當日現捕鮮甜蔥油細淋" },
+          { "id": "m5", "name": "慢火醬烤蜜汁牛小排", "desc": "主廚秘傳特調果香甜醬" }
+        ]
+      },
+      {
+        "category": "暖胃湯品 & 甜點",
+        "items": [
+          { "id": "m6", "name": "金湯花膠燉土雞", "desc": "文火慢熬八小時濃郁膠質" },
+          { "id": "m7", "name": "手工拔絲香芋脆捲", "desc": "大甲芋頭綿密濃香、金黃香脆" }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "slide-3",
+    "type": "poll",
+    "title": "🗳️ 互動投票：今晚第一人氣菜色？",
+    "subtitle": "Vote for Tonight's Favorite Dish",
+    "badge": "即時票選",
+    "content": "大家已經品嚐完今晚的料理，誰才是您心中的今晚 MVP？請投下您神聖的一票！",
+    "imageUrl": "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80",
+    "allowMulti": false,
+    "options": [
+      { "id": "p1", "text": "🥇 金沙烏魚子佐炙干貝" },
+      { "id": "p2", "text": "🥩 慢火醬烤蜜汁牛小排" },
+      { "id": "p3", "text": "🐟 古法清蒸鮮甜龍虎斑" },
+      { "id": "p4", "text": "🍲 金湯花膠極品燉土雞" }
+    ]
+  },
+  {
+    "id": "slide-4",
+    "type": "lucky_wheel",
+    "title": "🎡 盛宴歡樂幸運大轉盤",
+    "subtitle": "Synchronized Lucky Draw",
+    "badge": "同步抽獎",
+    "content": "主控端啟動輪盤轉動時，所有在座賓客的手機將同步旋轉並抽出幸運大獎！",
+    "imageUrl": "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=1200&q=80",
+    "prizes": [
+      { "id": "w1", "text": "🧧 特獎紅包 888", "color": "#ff4d4f" },
+      { "id": "w2", "text": "🍾 高級陳釀紅酒一瓶", "color": "#fa8c16" },
+      { "id": "w3", "text": "🎁 驚喜文創伴手禮", "color": "#faad14" },
+      { "id": "w4", "text": "🎤 上台獻唱歡樂一曲", "color": "#52c41a" },
+      { "id": "w5", "text": "🥂 全桌親友共同乾杯", "color": "#1890ff" },
+      { "id": "w6", "text": "👑 今晚免洗碗免收拾券", "color": "#722ed1" }
+    ]
+  },
+  {
+    "id": "slide-5",
+    "type": "rating",
+    "title": "⭐ 家宴滿意度與寄語祝福",
+    "subtitle": "Rating & Warm Wishes",
+    "badge": "心得回饋",
+    "content": "感謝大家今晚的熱情參與，請為今晚的氛圍與菜色打星評分，並留下一句祝福送給全家人！",
+    "imageUrl": "https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?auto=format&fit=crop&w=1200&q=80",
+    "maxStars": 5,
+    "promptText": "點選星級，並可寫下想對大家說的話"
+  }
+]
