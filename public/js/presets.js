@@ -1,126 +1,101 @@
 // Built-in Presets for Slides
 window.SLIDE_PRESETS = {
   banquet: {
-    name: "🏮 溫馨闔家盛宴 (預設)",
-    description: "開場歡迎、主廚菜單點選、人氣菜色票選、大獎輪盤、心得星級評價",
+    name: "🏮 東霖 & 芷鈞・親友開場盛宴",
+    description: "東霖男方親友團、芷鈞女方親友團、現場破冰票選、幸運輪盤、百年好合祝福",
     slides: [
       {
-        id: "b-1",
+        id: "slide-1",
         type: "showcase",
-        title: "🏮 闔家歡聚・盛宴開席",
-        subtitle: "Warm Family Gathering Feast",
-        badge: "歡迎入場",
-        content: "歡迎各位家人與好友蒞臨！今晚讓我們放下忙碌，共享美味佳餚與溫馨歡笑。\n手機連線後將自動同步主控螢幕，並可即時參與互動點餐與抽獎！",
-        imageUrl: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1200&q=80",
+        title: "🏮 喜結良緣・東霖 ❤️ 芷鈞",
+        subtitle: "Welcome to Donglin & Zhijun's Family Feast",
+        badge: "幸福開場",
+        content: "✨ 歡迎兩家至親好友齊聚一堂！\n今晚是東霖與芷鈞大喜相聚的美好時刻，\n讓我們帶著滿滿的歡笑與祝福，一起隆重認識彼此最親愛的家人！",
+        imageUrl: "/images/feast_hero.jpg",
         theme: "amber"
       },
       {
-        id: "b-2",
-        type: "menu",
-        title: "📋 今晚家宴特選菜單",
-        subtitle: "Chef's Special Tasting Menu",
-        badge: "點選菜色",
-        content: "請在手機端勾選您最期待品嚐或想加點的菜色，主控端將即時彙整統計送進廚房！",
-        imageUrl: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=1200&q=80",
-        menuCategories: [
-          {
-            category: "開胃前菜",
-            items: [
-              { id: "m1", name: "金沙烏魚子脆餅", desc: "野生烏魚子佐脆青蘋果片" },
-              { id: "m2", name: "松露野菇炙干貝", desc: "北海道生食級干貝佐黑松露醬" }
-            ]
-          },
-          {
-            category: "主廚大菜",
-            items: [
-              { id: "m3", name: "特級花雕醉仙雞", desc: "陳釀花雕酒溫潤甘醇浸漬" },
-              { id: "m4", name: "古法清蒸龍虎斑", desc: "當日現捕鮮甜細緻蔥油淋" },
-              { id: "m5", name: "慢火醬烤牛小排", desc: "獨家特調私房果香甜醬" }
-            ]
-          },
-          {
-            category: "暖胃湯品 & 甜點",
-            items: [
-              { id: "m6", name: "金湯花膠燉土雞", desc: "文火慢熬八小時濃郁膠質" },
-              { id: "m7", name: "手工拔絲香芋脆捲", desc: "大甲芋頭綿密香濃金黃脆皮" }
-            ]
-          }
+        id: "slide-2",
+        type: "family",
+        familySide": "groom",
+        title: "🤵 男方親友團・隆重登場！",
+        subtitle: "Groom Donglin's Wonderful Family",
+        badge: "東霖親友團",
+        content: "熱烈歡迎新郎東霖的至親家人們！有德高望重的奶奶，還有全力相挺的長輩與活力充沛的弟妹們！",
+        imageUrl: "/images/groom_family.jpg",
+        members: [
+          { id: "g-groom", name: "東霖 (新郎)", role: "男主角", avatar: "🤵", avatarBg: "linear-gradient(135deg, #3b82f6, #1d4ed8)", tag: "帥氣主角", desc: "新好男人・寵妻第一名" },
+          { id: "g-grandma", name: "金珠 奶奶", role: "新郎奶奶", avatar: "👵", avatarBg: "linear-gradient(135deg, #f59e0b, #d97706)", tag: "德高望重", desc: "全家族福氣象徵・慈祥大家長" },
+          { id: "g-sister", name: "玉婷", role: "新郎妹妹", avatar: "👧", avatarBg: "linear-gradient(135deg, #ec4899, #be185d)", tag: "貼心妹妹", desc: "甜美可愛・新郎最強神隊友" },
+          { id: "g-aunt1", name: "奈玲 姑姑", role: "新郎姑姑", avatar: "👩", avatarBg: "linear-gradient(135deg, #8b5cf6, #6d28d9)", tag: "活力熱情", desc: "開朗大方・聚會歡樂製造機" },
+          { id: "g-uncle-in-law", name: "銘忠 姑丈", role: "新郎姑丈", avatar: "👨", avatarBg: "linear-gradient(135deg, #10b981, #047857)", tag: "幽默擔當", desc: "沉穩風趣・親切大方的好長輩" },
+          { id: "g-cousin-m1", name: "淳瑋", role: "新郎表弟", avatar: "👦", avatarBg: "linear-gradient(135deg, #06b6d4, #0e7490)", tag: "陽光帥氣", desc: "青春活力・熱情開朗好青年" },
+          { id: "g-cousin-f1", name: "芷瑄", role: "新郎表妹", avatar: "👧", avatarBg: "linear-gradient(135deg, #f43f5e, #e11d48)", tag: "元氣甜心", desc: "活潑乖巧・家族顏值小仙女" },
+          { id: "g-uncle", name: "文進 叔叔", role: "新郎叔叔", avatar: "👨", avatarBg: "linear-gradient(135deg, #f97316, #c2410c)", tag: "豪邁海量", desc: "熱情霸氣・最罩最挺的叔叔" },
+          { id: "g-aunt2", name: "淑娟 嬸嬸", role: "新郎嬸嬸", avatar: "👩", avatarBg: "linear-gradient(135deg, #a855f7, #7e22ce)", tag: "溫柔賢淑", desc: "氣質出眾・親切溫暖的守護者" },
+          { id: "g-cousin-m2", name: "東宸", role: "新郎堂弟", avatar: "👦", avatarBg: "linear-gradient(135deg, #14b8a6, #0f766e)", tag: "聰敏新星", desc: "機靈有禮・家族未來耀眼希望" }
         ]
       },
       {
-        id: "b-3",
+        id: "slide-3",
+        type: "family",
+        familySide": "bride",
+        title: "👰 女方親友團・美麗亮相！",
+        subtitle: "Bride Zhijun's Beloved Family",
+        badge: "芷鈞親友團",
+        content: "熱烈掌聲歡迎新娘芷鈞最深愛的至親家人！父母溫暖深情，兄姊更是最強大貼心的堅強後盾！",
+        imageUrl: "/images/bride_family.jpg",
+        members: [
+          { id: "b-bride", name: "芷鈞 (新娘)", role: "女主角", avatar: "👰", avatarBg: "linear-gradient(135deg, #f43f5e, #be123c)", tag: "絕美主角", desc: "溫柔聰慧・今晚全場最美新娘" },
+          { id: "b-father", name: "新娘爸爸", role: "慈愛父親", avatar: "👨", avatarBg: "linear-gradient(135deg, #3b82f6, #1e40af)", tag: "如山依靠", desc: "沉穩深情・芷鈞最溫暖厚實的靠山" },
+          { id: "b-mother", name: "新娘媽媽", role: "溫柔母親", avatar: "👩", avatarBg: "linear-gradient(135deg, #ec4899, #9d174d)", tag: "慈愛春風", desc: "心靈港灣・無微不至的呵護守護" },
+          { id: "b-brother", name: "新娘哥哥", role: "新娘哥哥", avatar: "👦", avatarBg: "linear-gradient(135deg, #10b981, #065f46)", tag: "護妹將軍", desc: "挺拔帥氣・最有肩膀與擔當的哥哥" },
+          { id: "b-sister", name: "新娘姊姊", role: "新娘姊姊", avatar: "👧", avatarBg: "linear-gradient(135deg, #8b5cf6, #5b21b6)", tag: "貼心智囊", desc: "知性優雅・無話不談的最棒閨蜜" }
+        ]
+      },
+      {
+        id: "slide-4",
         type: "poll",
-        title: "🗳️ 互動投票：今晚第一人氣菜色？",
-        subtitle: "Vote for Tonight's Favorite Dish",
+        title: "🗳️ 現場破冰：誰是今晚最強「氣氛應援團」？",
+        subtitle: "Family Icebreaker Poll",
         badge: "即時票選",
-        content: "品嚐完美饌後，誰是您心目中最令人難忘的料理？請投下您神聖的一票！",
-        imageUrl: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80",
+        content: "請在手機上投下您神聖的一票，看看今晚哪一隊的熱情指數最爆表！",
+        imageUrl: "/images/feast_hero.jpg",
         allowMulti: false,
         options: [
-          { id: "p1", text: "🥇 金沙烏魚子佐炙干貝" },
-          { id: "p2", text: "🥩 慢火醬烤蜜汁牛小排" },
-          { id: "p3", text: "🐟 古法清蒸鮮甜龍虎斑" },
-          { id: "p4", text: "🍲 金湯花膠極品燉土雞" }
+          { id: "p1", text: "👵 男方長輩團（奶奶、姑姑姑丈、叔叔嬸嬸）" },
+          { id: "p2", text: "🌟 青春後援團（妹妹、表弟妹、堂弟、新娘兄姊）" },
+          { id: "p3", text: "👑 今晚最閃亮天生一對（新郎東霖 & 新娘芷鈞）" },
+          { id: "p4", text: "💖 兩家全部 100 分，全家團聚最幸福！" }
         ]
       },
       {
-        id: "b-4",
+        id: "slide-5",
         type: "lucky_wheel",
-        title: "🎡 盛宴歡樂幸運大轉盤",
+        title: "🎡 闔家歡樂・幸運大轉盤",
         subtitle: "Synchronized Lucky Draw",
         badge: "同步抽獎",
-        content: "主控端啟動輪盤轉動時，所有在座賓客的手機將同步旋轉並抽出幸運大獎！",
-        imageUrl: "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=1200&q=80",
+        content: "主控端啟動輪盤轉動時，所有在座親友的手機將同步旋轉並抽出今晚大獎！",
+        imageUrl: "/images/game_wheel.jpg",
         prizes: [
-          { id: "w1", text: "🧧 特獎紅包 888", color: "#ff4d4f" },
+          { id: "w1", text: "🧧 新人大紅包 888", color: "#ff4d4f" },
           { id: "w2", text: "🍾 高級陳釀紅酒一瓶", color: "#fa8c16" },
-          { id: "w3", text: "🎁 驚喜文創伴手禮", color: "#faad14" },
-          { id: "w4", text: "🎤 上台獻唱歡樂一曲", color: "#52c41a" },
-          { id: "w5", text: "🥂 全桌親友共同乾杯", color: "#1890ff" },
-          { id: "w6", "text": "👑 免收拾免洗碗特權", color: "#722ed1" }
+          { id: "w3", text: "🎁 幸福文創伴手禮", color: "#faad14" },
+          { id: "w4", "text": "🎤 現場歡唱金曲一首", color: "#52c41a" },
+          { id: "w5", text: "🥂 全體親友熱情大乾杯", color: "#1890ff" },
+          { id: "w6", text: "👑 今日免洗碗免收拾特權", color: "#722ed1" }
         ]
       },
       {
-        id: "b-5",
+        id: "slide-6",
         type: "rating",
-        title: "⭐ 家宴滿意度與寄語祝福",
-        subtitle: "Rating & Warm Wishes",
-        badge: "心得回饋",
-        content: "感謝大家今晚的熱情相聚，請給今晚的氛圍與菜色打星評分，並留下一句祝福送給全家人！",
-        imageUrl: "https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?auto=format&fit=crop&w=1200&q=80",
+        title: "⭐ 給東霖與芷鈞的幸福祝福",
+        subtitle: "Warm Wishes & Blessing",
+        badge: "祝福留言",
+        content: "感謝大家今晚的熱情見證！請給這對新人送上 5 顆星滿分祝福，並在手機寫下一句最溫暖的祝賀詞！",
+        imageUrl: "/images/feast_hero.jpg",
         maxStars: 5,
-        promptText: "點選星級，並可寫下想對大家說的話"
-      }
-    ]
-  },
-  tech_showcase: {
-    name: "⚡ 科技發表會／提案簡報",
-    description: "產品核心亮點、功能滿意度調查、聽眾提問互動",
-    slides: [
-      {
-        id: "t-1",
-        type: "showcase",
-        title: "🚀 新一代跨螢幕即時互動系統",
-        subtitle: "Next-Gen Multi-Display Realtime Engine",
-        badge: "產品發布",
-        content: "毫秒級 WebSocket 全雙工同步架構，主控端一手掌握各端螢幕與即時互動反饋。",
-        imageUrl: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=1200&q=80"
-      },
-      {
-        id: "t-2",
-        type: "poll",
-        title: "📊 現場調查：哪項特色最吸引您？",
-        subtitle: "Audience Realtime Survey",
-        badge: "即時問答",
-        content: "請從屬端點選您最看重的技術特點：",
-        imageUrl: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1200&q=80",
-        allowMulti: false,
-        options: [
-          { id: "o1", text: "⚡ 極低延遲毫秒級同步" },
-          { id: "o2", text: "📱 免裝 App 掃碼即用" },
-          { id: "o3", text: "☁️ 一鍵部署至 Render 雲端" },
-          { id: "o4", text: "🎨 高質感玻璃擬態視覺設計" }
-        ]
+        promptText: "點選星級，並為新人留下永恆祝福"
       }
     ]
   }

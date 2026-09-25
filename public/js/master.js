@@ -245,6 +245,28 @@ function renderStageInteractivePreview(slide) {
     if (spinBtn) {
       spinBtn.addEventListener('click', triggerWheelSpin);
     }
+  } else if (slide.type === 'family') {
+    let count = (slide.members || []).length;
+    let html = `
+      <div style="color:var(--accent-gold);font-weight:700;margin-bottom:8px;">
+        👥 ${slide.badge || '親友代表團'} (共 ${count} 位成員)：
+      </div>
+      <div class="family-members-grid">
+    `;
+    (slide.members || []).forEach(m => {
+      html += `
+        <div class="family-card" style="padding:8px 6px;">
+          <div class="family-avatar-wrap" style="width:44px;height:44px;font-size:22px;background:${m.avatarBg || 'var(--accent-gold)'};margin-bottom:4px;">
+            <span>${m.avatar || '👤'}</span>
+          </div>
+          <span class="family-tag-pill" style="font-size:9px;padding:1px 6px;">${m.tag || m.role}</span>
+          <div class="family-name" style="font-size:12px;">${m.name}</div>
+          <div class="family-desc" style="font-size:10px;">${m.desc || ''}</div>
+        </div>
+      `;
+    });
+    html += `</div>`;
+    stageInteractive.innerHTML = html;
   } else if (slide.type === 'rating') {
     stageInteractive.innerHTML = `
       <div style="color:var(--accent-gold);font-weight:700;">⭐ 星級評價與祝福</div>

@@ -148,6 +148,11 @@ function renderInteractiveWidget() {
   if (!currentSlide) return;
   interactiveArea.innerHTML = '';
 
+  if (currentSlide.type === 'family') {
+    renderFamilyWidget();
+    return;
+  }
+
   // If host locked selection
   if (!currentState.allowSelection) {
     interactiveArea.innerHTML = `
@@ -167,6 +172,61 @@ function renderInteractiveWidget() {
   } else if (currentSlide.type === 'rating') {
     renderRatingWidget();
   }
+}
+
+// 0. Q-Version Family Introduction Widget
+function renderFamilyWidget() {
+  const members = currentSlide.members || [];
+  const container = document.createElement('div');
+  container.className = 'family-intro-container';
+
+  let html = `<div class="family-members-grid">`;
+  members.forEach(m => {
+    html += `
+      <div class="family-card" data-id="${m.id}">
+        <div class="family-avatar-wrap" style="background:${m.avatarBg || 'linear-gradient(135deg, #f59e0b, #d97706)'};">
+          <span>${m.avatar || '👤'}</span>
+        </div>
+        <span class="family-tag-pill">${m.tag || m.role}</span>
+        <div class="family-name">${m.name}</div>
+        <div class="family-desc">${m.desc || ''}</div>
+      </div>
+    `;
+  });
+  html += `</div>`;
+
+  html += `
+    <button id="btn-cheer-family" class="btn btn-primary btn-cheer-all">
+      <span>👏</span>
+      <span>為全體親友熱烈鼓掌喝采！</span>
+      <span>🎉</span>
+    </button>
+  `;
+
+  container.innerHTML = html;
+
+  const btnCheer = container.querySelector('#btn-cheer-family');
+  if (btnCheer) {
+    btnCheer.addEventListener('click', () => {
+      fireConfetti();
+      showToast('🎉 感謝您的熱情喝采與滿滿掌聲！');
+      socket.emit('slave_submit_choice', {
+        cheered: true,
+        submittedAt: Date.now()
+      });
+    });
+  }
+
+  container.querySelectorAll('.family-card').forEach(card => {
+    card.addEventListener('click', () => {
+      card.style.transform = 'scale(1.08)';
+      setTimeout(() => { card.style.transform = ''; }, 300);
+      const name = card.querySelector('.family-name')?.textContent || '';
+      showToast(`💖 給「${name}」獻上最熱烈的掌聲！`);
+    });
+  });
+
+  interactiveArea.appendChild(container);
 }
 
 // 1. Poll Widget
