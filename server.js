@@ -51,7 +51,7 @@ try {
 let currentIndex = 0;
 let allowSelection = true;
 let showResults = false;
-let familyTreeNav = { householdId: null, memberId: null };
+let familyTreeNav = { side: 'groom', householdId: null, memberId: null };
 
 // Submissions store: { [slideId]: [ { socketId, guestName, data, timestamp } ] }
 let submissions = {};
@@ -278,8 +278,9 @@ io.on('connection', (socket) => {
 
     if (typeof index === 'number' && index >= 0 && index < slides.length) {
       currentIndex = index;
-      familyTreeNav = { householdId: null, memberId: null };
       const currentSlide = slides[currentIndex];
+      const defaultSide = (currentSlide && currentSlide.familySide) || 'groom';
+      familyTreeNav = { side: defaultSide, householdId: null, memberId: null };
 
       // Broadcast to all slaves
       io.emit('slide_changed', {
@@ -298,11 +299,11 @@ io.on('connection', (socket) => {
   });
 
   // Master navigates within family tree (select household or spotlight person)
-  socket.on('master_family_nav', ({ householdId = null, memberId = null }) => {
+  socket.on('master_family_nav', ({ side = 'groom', householdId = null, memberId = null }) => {
     const client = connectedClients.get(socket.id);
     if (!client || client.role !== 'master') return;
 
-    familyTreeNav = { householdId, memberId };
+    familyTreeNav = { side, householdId, memberId };
     io.emit('family_nav_synced', familyTreeNav);
     io.to('master_room').emit('master_telemetry_updated', getMasterDashboardPayload());
   });

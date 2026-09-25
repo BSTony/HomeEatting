@@ -143,14 +143,30 @@ function applyState(state) {
   renderInteractiveWidget();
 }
 
-let currentFamilyNav = { householdId: null, memberId: null };
+let currentFamilyNav = { side: 'groom', householdId: null, memberId: null };
 
 socket.on('family_nav_synced', (nav) => {
-  currentFamilyNav = nav || { householdId: null, memberId: null };
+  currentFamilyNav = nav || { side: 'groom', householdId: null, memberId: null };
   if (currentSlide && (currentSlide.type === 'family_tree' || currentSlide.type === 'family')) {
     renderFamilyTreeWidget();
   }
 });
+
+// Helper to get family tree data for active side
+function getFamilyTreeData(side) {
+  if (window.FAMILY_DATA && window.FAMILY_DATA[side]) {
+    return window.FAMILY_DATA[side];
+  }
+  if (currentSlide && currentSlide.households) {
+    return {
+      side: side,
+      title: side === 'bride' ? '🌸 新娘芷鈞家族譜系' : '👑 新郎東霖家族譜系',
+      subtitle: side === 'bride' ? '芷鈞至親溫暖大家庭' : '至親三大幸福家庭',
+      households: currentSlide.households
+    };
+  }
+  return { side, households: [] };
+}
 
 // Render Interactive Content depending on Slide Type
 function renderInteractiveWidget() {
@@ -183,199 +199,256 @@ function renderInteractiveWidget() {
   }
 }
 
-// Q-Version Family Tree & Character Entrance Spotlight
+// Single-Screen Animated Family Tree & Character Entrance Spotlight
 function renderFamilyTreeWidget() {
-  const households = currentSlide.households || [];
-  const container = document.createElement('div');
-  container.className = 'family-intro-container';
+  interactiveArea.innerHTML = '';
 
-  // Step 1: Showing all households
-  if (!currentFamilyNav.householdId) {
-    let html = `
-      <div style="font-size:13px;font-weight:700;color:var(--accent-gold);margin-bottom:6px;">
-        🏛️ 家族親友譜系（點選家庭查看成員）：
-      </div>
-      <div class="tree-overview-container">
+  const activeSide = currentFamilyNav.side || (currentSlide.familySide === 'bride' ? 'bride' : 'groom');
+  const sideData = getFamilyTreeData(activeSide);
+  const households = sideData.households || [];
+  const currentHousehold = households.find(h => h.id === currentFamilyNav.householdId) || null;
+  const activeMember = currentHousehold ? (currentHousehold.members || []).find(m => m.id === currentFamilyNav.memberId) : null;
+
+  // Build the outer wrapper
+  const wrapper = document.createElement('div');
+  wrapper.className = 'family-scene-wrapper';
+
+  // 1. Top Switcher: 男方家族 vs 女方家族
+  const switcherHtml = `
+    <div class="scene-side-switcher">
+      <button class="scene-side-btn ${activeSide === 'groom' ? 'active' : ''}" data-side="groom">
+        <span>🤵</span>
+        <span>男方家族 (3個家庭)</span>
+      </button>
+      <button class="scene-side-btn ${activeSide === 'bride' ? 'active' : ''}" data-side="bride">
+        <span>👰</span>
+        <span>女方家族 (1個家庭)</span>
+      </button>
+    </div>
+  `;
+
+  // 2. SVG branch lines for Mode 1
+  let svgBranchesHtml = '';
+  if (activeSide === 'groom') {
+    svgBranchesHtml = `
+      <path class="branch-path" d="M 180 20 C 180 80, 60 80, 60 160" />
+      <path class="branch-path" d="M 180 20 C 180 80, 180 100, 180 160" />
+      <path class="branch-path" d="M 180 20 C 180 80, 300 80, 300 160" />
     `;
-
-    households.forEach(h => {
-      let avatarStackHtml = '';
-      (h.members || []).slice(0, 4).forEach(m => {
-        avatarStackHtml += `
-          <div class="mini-avatar-bubble" style="background:${m.avatarBg || 'var(--accent-gold)'};">
-            ${m.avatar || '👤'}
-          </div>
-        `;
-      });
-
-      html += `
-        <div class="household-card" data-hid="${h.id}">
-          <div class="household-top-row">
-            <div>
-              <div class="household-title">${h.title}</div>
-              <div class="household-subtitle">${h.subtitle || ''}</div>
-            </div>
-            <span class="badge badge-gold">👥 ${h.memberCount} 位成員</span>
-          </div>
-          <div class="household-members-row">
-            <div class="avatar-stack">
-              ${avatarStackHtml}
-            </div>
-            <span class="household-enter-hint">介紹成員 ➔</span>
-          </div>
-        </div>
-      `;
-    });
-
-    html += `</div>`;
-    container.innerHTML = html;
-
-    container.querySelectorAll('.household-card').forEach(card => {
-      card.addEventListener('click', () => {
-        const hid = card.dataset.hid;
-        currentFamilyNav.householdId = hid;
-        currentFamilyNav.memberId = null;
-        renderFamilyTreeWidget();
-      });
-    });
-
-    closeSpotlightModal();
   } else {
-    // Step 2: Inside a specific Household
-    const currentHousehold = households.find(h => h.id === currentFamilyNav.householdId);
-    if (!currentHousehold) {
-      currentFamilyNav.householdId = null;
-      renderFamilyTreeWidget();
-      return;
-    }
-
-    let html = `
-      <div class="household-detail-container">
-        <button id="btn-tree-back" class="btn-back-to-tree">
-          <span>⬅️ 返回家族譜總覽</span>
-        </button>
-        <div class="household-header-banner">
-          <div>
-            <div style="font-size:15px;font-weight:800;color:var(--text-primary);">${currentHousehold.title}</div>
-            <div style="font-size:12px;color:var(--accent-gold);">${currentHousehold.subtitle || ''}</div>
-          </div>
-          <span class="badge badge-gold">共 ${currentHousehold.memberCount} 位成員</span>
-        </div>
-        <div style="font-size:12px;color:var(--text-muted);margin:4px 0 2px;">
-          ✨ 點選任一位家人，為他播放專屬出場動畫：
-        </div>
-        <div class="family-members-grid">
+    svgBranchesHtml = `
+      <path class="branch-path" d="M 180 20 C 180 80, 180 100, 180 160" />
     `;
+  }
 
+  // 3. Household circular orbs for Mode 1 (NO SQUARE BOXES!)
+  let householdOrbsHtml = '';
+  households.forEach(h => {
+    let previewEmojis = (h.members || []).map(m => m.avatar || '👤').slice(0, 4).join(' ');
+    householdOrbsHtml += `
+      <div class="household-node-orb" data-hid="${h.id}">
+        <div class="orb-circle" style="background:${h.accent || 'radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.25) 0%, rgba(22, 27, 40, 0.95) 75%)'};">
+          <span>${h.icon || '🏠'}</span>
+          <div class="orb-pulse-ring"></div>
+        </div>
+        <div class="orb-name-label">${h.shortTitle || h.title}</div>
+        <div class="orb-count-pill">👥 ${h.count || (h.members || []).length} 位成員</div>
+        <div class="orb-preview-row">${previewEmojis}</div>
+      </div>
+    `;
+  });
+
+  // 4. Member floating spheres for Mode 2 (NO SQUARE BOXES!)
+  let memberBubblesHtml = '';
+  if (currentHousehold) {
     (currentHousehold.members || []).forEach(m => {
-      html += `
-        <div class="family-card" data-mid="${m.id}">
-          <div class="family-avatar-wrap" style="background:${m.avatarBg || 'linear-gradient(135deg, #f59e0b, #d97706)'};">
+      memberBubblesHtml += `
+        <div class="member-floating-bubble" data-mid="${m.id}">
+          <div class="member-avatar-sphere" style="background:${m.avatarBg || 'var(--accent-gold)'};">
             <span>${m.avatar || '👤'}</span>
           </div>
-          <span class="family-tag-pill">${m.tag || m.role}</span>
-          <div class="family-name">${m.name}</div>
-          <div class="family-desc">${m.title || m.desc || ''}</div>
-          <div style="font-size:10px;color:var(--accent-gold);margin-top:6px;font-weight:bold;">
-            ✨ 出場動畫 ➔
-          </div>
+          <div class="member-name-text">${m.name}</div>
+          <div class="member-role-tag">${m.role}</div>
+          <div class="member-tap-hint">✨ 登場</div>
         </div>
       `;
     });
+  }
 
-    html += `
+  // Mode visibility
+  const showSpotlight = !!activeMember;
+  const showMembers = !showSpotlight && !!currentHousehold;
+  const showTree = !showSpotlight && !showMembers;
+
+  const stageHtml = `
+    <div class="scene-stage-canvas" id="scene-stage-canvas">
+      <div class="scene-dust-particles"></div>
+
+      <!-- VIEW 1: Tree Branches & Household Circular Orbs -->
+      <div class="scene-view-tree ${showTree ? '' : 'hidden'}" id="scene-view-tree">
+        <div class="tree-trunk-hub">
+          <span>${sideData.title}</span>
         </div>
-        <button id="btn-cheer-family" class="btn btn-primary btn-cheer-all">
-          <span>👏</span>
-          <span>為全體家人熱烈鼓掌喝采！</span>
-          <span>🎉</span>
+
+        <svg class="tree-branches-svg" viewBox="0 0 360 200" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="goldBranchGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="#fbbf24" stop-opacity="0.9" />
+              <stop offset="100%" stop-color="#f59e0b" stop-opacity="0.3" />
+            </linearGradient>
+          </defs>
+          ${svgBranchesHtml}
+        </svg>
+
+        <div class="household-nodes-cluster">
+          ${householdOrbsHtml}
+        </div>
+
+        <div class="tree-touch-hint">
+          <span>✨ 點選家庭圓球・展開成員群星 ➔</span>
+        </div>
+      </div>
+
+      <!-- VIEW 2: Household Members Constellation (Organic Floating Bubbles) -->
+      <div class="scene-view-members ${showMembers ? '' : 'hidden'}" id="scene-view-members">
+        <div class="members-top-nav-bar">
+          <button class="btn-scene-back-orb" id="btn-back-to-tree">
+            <span>⬅️ 家族譜總覽</span>
+          </button>
+          <div class="scene-household-banner">
+            ${currentHousehold ? `${currentHousehold.icon || '🏠'} ${currentHousehold.title} ｜ 👥 共有 ${currentHousehold.count || (currentHousehold.members || []).length} 位成員` : ''}
+          </div>
+        </div>
+
+        <div class="members-constellation-wrap">
+          ${memberBubblesHtml}
+        </div>
+
+        <button class="btn btn-primary" id="btn-cheer-household" style="margin-top:auto;width:100%;padding:10px;font-size:13px;border-radius:var(--radius-full);">
+          <span>👏 為全體家人熱烈喝采！</span>
         </button>
       </div>
-    `;
 
-    container.innerHTML = html;
+      <!-- VIEW 3: Character Entrance Spotlight Stage (Inside Scene!) -->
+      <div class="scene-view-spotlight ${showSpotlight ? '' : 'hidden'}" id="scene-view-spotlight">
+        <div class="sunburst-beams"></div>
 
-    const btnBack = container.querySelector('#btn-tree-back');
-    if (btnBack) {
-      btnBack.addEventListener('click', () => {
-        currentFamilyNav.householdId = null;
-        currentFamilyNav.memberId = null;
-        renderFamilyTreeWidget();
-      });
-    }
+        <div class="spotlight-hero-card">
+          <div class="spotlight-entrance-tag">🌟 家族焦點・隆重登場 🌟</div>
 
-    const btnCheer = container.querySelector('#btn-cheer-family');
-    if (btnCheer) {
-      btnCheer.addEventListener('click', () => {
-        fireConfetti();
-        showToast('🎉 感謝您的熱情喝采與掌聲！');
-        socket.emit('slave_submit_choice', { cheered: true, submittedAt: Date.now() });
-      });
-    }
+          <div class="spotlight-hero-avatar-orb" style="background:${activeMember ? activeMember.avatarBg : 'var(--accent-gold)'};">
+            <span>${activeMember ? activeMember.avatar : '👤'}</span>
+          </div>
 
-    container.querySelectorAll('.family-card').forEach(card => {
-      card.addEventListener('click', () => {
-        const mid = card.dataset.mid;
-        const member = (currentHousehold.members || []).find(m => m.id === mid);
-        if (member) {
-          triggerMemberEntrance(member);
-        }
-      });
+          <div class="spotlight-hero-name">${activeMember ? activeMember.name : ''}</div>
+          <div class="spotlight-hero-role-pill">${activeMember ? `${activeMember.role} • ${activeMember.tag}` : ''}</div>
+
+          <div class="spotlight-comic-bubble">
+            ${activeMember ? activeMember.quote : ''}
+          </div>
+
+          <div class="spotlight-action-row">
+            <button class="btn-scene-action btn-cheer" id="btn-scene-spotlight-cheer">
+              <span>👏 為他喝采！</span>
+            </button>
+            <button class="btn-scene-action btn-back" id="btn-scene-spotlight-back">
+              <span>👥 其他成員</span>
+            </button>
+            <button class="btn-scene-action btn-tree" id="btn-scene-spotlight-tree">
+              <span>🏛️ 家族譜</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  wrapper.innerHTML = switcherHtml + stageHtml;
+  interactiveArea.appendChild(wrapper);
+
+  // Attach event handlers
+  // Side switcher
+  wrapper.querySelectorAll('.scene-side-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const side = btn.dataset.side;
+      currentFamilyNav.side = side;
+      currentFamilyNav.householdId = null;
+      currentFamilyNav.memberId = null;
+      renderFamilyTreeWidget();
     });
+  });
 
-    // Check if synced spotlight member
-    if (currentFamilyNav.memberId) {
-      const activeMember = (currentHousehold.members || []).find(m => m.id === currentFamilyNav.memberId);
-      if (activeMember) {
-        triggerMemberEntrance(activeMember);
-      }
-    }
+  // Household orb click
+  wrapper.querySelectorAll('.household-node-orb').forEach(orb => {
+    orb.addEventListener('click', () => {
+      const hid = orb.dataset.hid;
+      currentFamilyNav.householdId = hid;
+      currentFamilyNav.memberId = null;
+      renderFamilyTreeWidget();
+    });
+  });
+
+  // Back to tree
+  const btnBackTree = wrapper.querySelector('#btn-back-to-tree');
+  if (btnBackTree) {
+    btnBackTree.addEventListener('click', () => {
+      currentFamilyNav.householdId = null;
+      currentFamilyNav.memberId = null;
+      renderFamilyTreeWidget();
+    });
   }
 
-  interactiveArea.appendChild(container);
-}
-
-// Member Spotlight Modal Trigger
-function triggerMemberEntrance(member) {
-  const modal = document.getElementById('spotlight-modal');
-  if (!modal) return;
-
-  const emoji = document.getElementById('spotlight-avatar-emoji');
-  const wrap = document.getElementById('spotlight-avatar-wrap');
-  const name = document.getElementById('spotlight-name');
-  const role = document.getElementById('spotlight-role-badge');
-  const title = document.getElementById('spotlight-title-text');
-  const quote = document.getElementById('spotlight-quote-bubble');
-
-  if (emoji) emoji.textContent = member.avatar || '👤';
-  if (wrap) wrap.style.background = member.avatarBg || 'var(--accent-gold)';
-  if (name) name.textContent = member.name;
-  if (role) role.textContent = member.role + (member.tag ? ` • ${member.tag}` : '');
-  if (title) title.textContent = member.title || member.desc || '';
-  if (quote) quote.textContent = member.quote || '「恭喜東霖與芷鈞永結同心，永遠幸福！」';
-
-  modal.classList.add('show');
-  fireConfetti();
-
-  const btnCheer = document.getElementById('btn-spotlight-cheer');
-  if (btnCheer) {
-    btnCheer.onclick = () => {
+  // Cheer household
+  const btnCheerHouse = wrapper.querySelector('#btn-cheer-household');
+  if (btnCheerHouse) {
+    btnCheerHouse.addEventListener('click', () => {
       fireConfetti();
-      showToast(`💖 給「${member.name}」獻上最熱烈的掌聲！`);
-    };
+      showToast('🎉 感謝您的熱情喝采與掌聲！');
+      socket.emit('slave_submit_choice', { cheered: true, side: activeSide, household: currentHousehold ? currentHousehold.title : '' });
+    });
   }
 
-  const btnClose = document.getElementById('btn-close-spotlight');
-  if (btnClose) {
-    btnClose.onclick = () => {
-      closeSpotlightModal();
-    };
-  }
-}
+  // Member bubble click
+  wrapper.querySelectorAll('.member-floating-bubble').forEach(bubble => {
+    bubble.addEventListener('click', () => {
+      const mid = bubble.dataset.mid;
+      currentFamilyNav.memberId = mid;
+      renderFamilyTreeWidget();
+    });
+  });
 
-function closeSpotlightModal() {
-  const modal = document.getElementById('spotlight-modal');
-  if (modal) modal.classList.remove('show');
+  // Spotlight cheer
+  const btnSpotlightCheer = wrapper.querySelector('#btn-scene-spotlight-cheer');
+  if (btnSpotlightCheer) {
+    btnSpotlightCheer.addEventListener('click', () => {
+      fireConfetti();
+      showToast(`💖 為「${activeMember ? activeMember.name : ''}」獻上最熱烈的掌聲！`);
+      socket.emit('slave_submit_choice', { cheeredMember: activeMember ? activeMember.name : '', submittedAt: Date.now() });
+    });
+  }
+
+  // Spotlight back to members
+  const btnSpotlightBack = wrapper.querySelector('#btn-scene-spotlight-back');
+  if (btnSpotlightBack) {
+    btnSpotlightBack.addEventListener('click', () => {
+      currentFamilyNav.memberId = null;
+      renderFamilyTreeWidget();
+    });
+  }
+
+  // Spotlight back to tree
+  const btnSpotlightTree = wrapper.querySelector('#btn-scene-spotlight-tree');
+  if (btnSpotlightTree) {
+    btnSpotlightTree.addEventListener('click', () => {
+      currentFamilyNav.householdId = null;
+      currentFamilyNav.memberId = null;
+      renderFamilyTreeWidget();
+    });
+  }
+  // If spotlight active, trigger entrance confetti
+  if (showSpotlight) {
+    fireConfetti();
+  }
 }
 
 // 1. Poll Widget
