@@ -833,3 +833,156 @@ body {
   font-size: 11px;
   opacity: 0.9;
 }
+
+/* Floating Reactions Stream (愛心與掌聲飄起動畫) */
+.floating-reaction-container {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 99;
+}
+
+.floating-reaction-item {
+  position: absolute;
+  bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(15, 23, 42, 0.88);
+  border: 1.5px solid rgba(245, 158, 11, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding: 5px 14px;
+  border-radius: var(--radius-full);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 16px rgba(245, 158, 11, 0.4);
+  animation: floatReaction 3.2s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.floating-reaction-item .react-emoji {
+  font-size: 22px;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+}
+
+.floating-reaction-item .react-sender {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--accent-gold-light);
+}
+
+@keyframes floatReaction {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scale(0.6) rotate(0deg);
+  }
+  15% {
+    opacity: 1;
+    transform: translateY(-30px) scale(1.1) rotate(-4deg);
+  }
+  30% {
+    transform: translateY(-80px) scale(1) rotate(4deg);
+  }
+  70% {
+    opacity: 0.95;
+    transform: translateY(-220px) scale(0.95) rotate(-3deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-350px) scale(0.8) rotate(5deg);
+  }
+}
+
+/* Spotlight Navigation Row (◀ 上一位 / 下一位 ▶) */
+.spotlight-nav-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 8px;
+  gap: 8px;
+}
+
+.btn-spotlight-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  font-size: 11px;
+  font-weight: 800;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-spotlight-nav:hover {
+  background: rgba(245, 158, 11, 0.3);
+  border-color: var(--accent-gold);
+  color: #ffffff;
+}
+
+.btn-spotlight-nav:active {
+  transform: scale(0.92);
+}
+
+.btn-spotlight-nav:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.spotlight-nav-counter {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--accent-gold-light);
+  letter-spacing: 1px;
+}
+
+/* Golden Halo Pulsing Around Avatar */
+.spotlight-avatar-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 6px;
+}
+
+.spotlight-avatar-halo {
+  position: absolute;
+  top: -8px; left: -8px; right: -8px; bottom: -8px;
+  border-radius: 50%;
+  border: 2px solid var(--accent-gold);
+  opacity: 0.8;
+  animation: haloPulse 2.2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes haloPulse {
+  0% { transform: scale(0.96); opacity: 0.4; box-shadow: 0 0 10px var(--accent-gold-glow); }
+  50% { transform: scale(1.12); opacity: 0.9; box-shadow: 0 0 25px var(--accent-gold-glow); }
+  100% { transform: scale(0.96); opacity: 0.4; box-shadow: 0 0 10px var(--accent-gold-glow); }
+}
+
+/* Sound Effect Mute/Unmute Mini-Button */
+.sound-toggle-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: var(--text-secondary);
+  border-radius: var(--radius-full);
+  padding: 4px 8px;
+  font-size: 11px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all var(--transition-fast);
+}
+
+.sound-toggle-btn:hover {
+  color: var(--accent-gold);
+  border-color: var(--accent-gold);
+}

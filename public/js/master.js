@@ -121,6 +121,81 @@ socket.on('master_init', (data) => {
   renderSlideDeck();
 });
 
+// Audio Synthesizer Chimes
+let masterSoundEnabled = true;
+function playChimeSound(type = 'fanfare') {
+  if (!masterSoundEnabled) return;
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    if (ctx.state === 'suspended') ctx.resume();
+    const now = ctx.currentTime;
+    if (type === 'fanfare') {
+      const freqs = [523.25, 659.25, 783.99, 1046.50];
+      freqs.forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+        gain.gain.setValueAtTime(0, now + idx * 0.08);
+        gain.gain.linearRampToValueAtTime(0.2, now + idx * 0.08 + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.35);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + idx * 0.08);
+        osc.stop(now + idx * 0.08 + 0.4);
+      });
+    } else if (type === 'pop') {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(587.33, now);
+      osc.frequency.exponentialRampToValueAtTime(1174.66, now + 0.08);
+      gain.gain.setValueAtTime(0.15, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.13);
+    }
+  } catch (e) {
+    // Gracefully handle browser policy
+  }
+}
+
+// Floating Reactions Container
+function ensureFloatingReactionContainer() {
+  let container = document.getElementById('floating-reaction-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'floating-reaction-container';
+    container.className = 'floating-reaction-container';
+    document.body.appendChild(container);
+  }
+  return container;
+}
+
+function spawnFloatingReaction(emoji = '💖', senderName = '現場親友') {
+  const container = ensureFloatingReactionContainer();
+  const item = document.createElement('div');
+  item.className = 'floating-reaction-item';
+  const leftPercent = 15 + Math.random() * 70;
+  item.style.left = `${leftPercent}%`;
+  item.innerHTML = `
+    <span class="react-emoji">${emoji}</span>
+    <span class="react-sender">${senderName}</span>
+  `;
+  container.appendChild(item);
+  setTimeout(() => {
+    item.remove();
+  }, 3200);
+}
+
+socket.on('floating_reaction', (data) => {
+  spawnFloatingReaction(data.emoji, data.senderName);
+});
+
 socket.on('master_telemetry_updated', (dashboard) => {
   updateDashboard(dashboard);
 });
@@ -149,10 +224,10 @@ socket.on('trigger_action', (data) => {
   }
 });
 
-let currentFamilyNav = { householdId: null, memberId: null };
+let currentFamilyNav = { side: 'groom', householdId: null, memberId: null };
 
 socket.on('family_nav_synced', (nav) => {
-  currentFamilyNav = nav || { householdId: null, memberId: null };
+  currentFamilyNav = nav || { side: 'groom', householdId: null, memberId: null };
   const slide = currentSlides[currentIndex];
   if (slide && (slide.type === 'family_tree' || slide.type === 'family')) {
     renderStageInteractivePreview(slide);
@@ -300,6 +375,12 @@ function renderMasterFamilyTree(slide) {
   const currentHousehold = households.find(h => h.id === currentFamilyNav.householdId) || null;
   const activeMember = currentHousehold ? (currentHousehold.members || []).find(m => m.id === currentFamilyNav.memberId) : null;
 
+  // Household members & Prev/Next Member calculation
+  const householdMembers = currentHousehold ? (currentHousehold.members || []) : [];
+  const currentMemberIndex = householdMembers.findIndex(m => m.id === currentFamilyNav.memberId);
+  const prevMember = currentMemberIndex > 0 ? householdMembers[currentMemberIndex - 1] : null;
+  const nextMember = currentMemberIndex >= 0 && currentMemberIndex < householdMembers.length - 1 ? householdMembers[currentMemberIndex + 1] : null;
+
   // Build the outer wrapper
   const wrapper = document.createElement('div');
   wrapper.className = 'family-scene-wrapper';
@@ -332,7 +413,7 @@ function renderMasterFamilyTree(slide) {
     `;
   }
 
-  // 3. Household circular orbs for Mode 1 (NO SQUARE BOXES!)
+  // 3. Household circular orbs for Mode 1
   let householdOrbsHtml = '';
   households.forEach(h => {
     let previewEmojis = (h.members || []).map(m => m.avatar || '👤').slice(0, 4).join(' ');
@@ -349,7 +430,7 @@ function renderMasterFamilyTree(slide) {
     `;
   });
 
-  // 4. Member floating spheres for Mode 2 (NO SQUARE BOXES!)
+  // 4. Member floating spheres for Mode 2
   let memberBubblesHtml = '';
   if (currentHousehold) {
     (currentHousehold.members || []).forEach(m => {
@@ -400,7 +481,7 @@ function renderMasterFamilyTree(slide) {
         </div>
       </div>
 
-      <!-- VIEW 2: Household Members Constellation (Organic Floating Bubbles) -->
+      <!-- VIEW 2: Household Members Constellation -->
       <div class="scene-view-members ${showMembers ? '' : 'hidden'}" id="scene-view-members">
         <div class="members-top-nav-bar">
           <button class="btn-scene-back-orb" id="btn-master-back-to-tree">
@@ -420,15 +501,33 @@ function renderMasterFamilyTree(slide) {
         </button>
       </div>
 
-      <!-- VIEW 3: Character Entrance Spotlight Stage (Inside Scene!) -->
+      <!-- VIEW 3: Character Entrance Spotlight Stage -->
       <div class="scene-view-spotlight ${showSpotlight ? '' : 'hidden'}" id="scene-view-spotlight">
         <div class="sunburst-beams"></div>
 
         <div class="spotlight-hero-card">
+          <!-- Spotlight Prev / Next Navigation -->
+          <div class="spotlight-nav-row">
+            <button class="btn-spotlight-nav" id="btn-master-spotlight-prev" ${!prevMember ? 'disabled' : ''}>
+              <span>◀</span>
+              <span>${prevMember ? prevMember.name : '最前'}</span>
+            </button>
+            <div class="spotlight-nav-counter">
+              ${currentMemberIndex >= 0 ? `${currentMemberIndex + 1} / ${householdMembers.length}` : ''}
+            </div>
+            <button class="btn-spotlight-nav" id="btn-master-spotlight-next" ${!nextMember ? 'disabled' : ''}>
+              <span>${nextMember ? nextMember.name : '最後'}</span>
+              <span>▶</span>
+            </button>
+          </div>
+
           <div class="spotlight-entrance-tag">🌟 全場同步・隆重登場 🌟</div>
 
-          <div class="spotlight-hero-avatar-orb" style="background:${activeMember ? activeMember.avatarBg : 'var(--accent-gold)'};">
-            <span>${activeMember ? activeMember.avatar : '👤'}</span>
+          <div class="spotlight-avatar-container">
+            <div class="spotlight-avatar-halo"></div>
+            <div class="spotlight-hero-avatar-orb" style="background:${activeMember ? activeMember.avatarBg : 'var(--accent-gold)'};">
+              <span>${activeMember ? activeMember.avatar : '👤'}</span>
+            </div>
           </div>
 
           <div class="spotlight-hero-name">${activeMember ? activeMember.name : ''}</div>
@@ -474,6 +573,7 @@ function renderMasterFamilyTree(slide) {
       const hid = orb.dataset.hid;
       currentFamilyNav.householdId = hid;
       currentFamilyNav.memberId = null;
+      playChimeSound('pop');
       socket.emit('master_family_nav', currentFamilyNav);
       renderMasterFamilyTree(slide);
     });
@@ -495,7 +595,12 @@ function renderMasterFamilyTree(slide) {
   if (btnCheerHouse) {
     btnCheerHouse.addEventListener('click', () => {
       fireConfetti();
+      playChimeSound('pop');
       socket.emit('master_trigger_action', { action: 'confetti' });
+      const emojis = ['👏', '🎉', '🥂', '💖', '✨'];
+      const em = emojis[Math.floor(Math.random() * emojis.length)];
+      socket.emit('send_reaction', { emoji: em, memberId: null });
+      spawnFloatingReaction(em, '主控指揮台');
       showToast('🎉 已觸發全場手機喝采特效！');
     });
   }
@@ -505,6 +610,7 @@ function renderMasterFamilyTree(slide) {
     bubble.addEventListener('click', () => {
       const mid = bubble.dataset.mid;
       currentFamilyNav.memberId = mid;
+      playChimeSound('fanfare');
       socket.emit('master_family_nav', currentFamilyNav);
       socket.emit('master_trigger_action', { action: 'confetti' });
       fireConfetti();
@@ -512,12 +618,42 @@ function renderMasterFamilyTree(slide) {
     });
   });
 
+  // Spotlight Prev / Next buttons
+  const btnPrev = wrapper.querySelector('#btn-master-spotlight-prev');
+  if (btnPrev && prevMember) {
+    btnPrev.addEventListener('click', () => {
+      currentFamilyNav.memberId = prevMember.id;
+      playChimeSound('fanfare');
+      socket.emit('master_family_nav', currentFamilyNav);
+      socket.emit('master_trigger_action', { action: 'confetti' });
+      fireConfetti();
+      renderMasterFamilyTree(slide);
+    });
+  }
+
+  const btnNext = wrapper.querySelector('#btn-master-spotlight-next');
+  if (btnNext && nextMember) {
+    btnNext.addEventListener('click', () => {
+      currentFamilyNav.memberId = nextMember.id;
+      playChimeSound('fanfare');
+      socket.emit('master_family_nav', currentFamilyNav);
+      socket.emit('master_trigger_action', { action: 'confetti' });
+      fireConfetti();
+      renderMasterFamilyTree(slide);
+    });
+  }
+
   // Spotlight cheer
   const btnSpotlightCheer = wrapper.querySelector('#btn-master-spotlight-cheer');
   if (btnSpotlightCheer) {
     btnSpotlightCheer.addEventListener('click', () => {
       fireConfetti();
+      playChimeSound('pop');
       socket.emit('master_trigger_action', { action: 'confetti' });
+      const emojis = ['💖', '👏', '🎉', '🥂', '✨', '💐', '🎊'];
+      const em = emojis[Math.floor(Math.random() * emojis.length)];
+      socket.emit('send_reaction', { emoji: em, memberId: activeMember ? activeMember.id : null });
+      spawnFloatingReaction(em, '主控指揮台');
       showToast(`🎊 為「${activeMember ? activeMember.name : ''}」觸發全場喝采！`);
     });
   }
@@ -544,6 +680,7 @@ function renderMasterFamilyTree(slide) {
   }
 
   if (showSpotlight) {
+    playChimeSound('fanfare');
     fireConfetti();
   }
 }

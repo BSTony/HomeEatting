@@ -352,6 +352,18 @@ io.on('connection', (socket) => {
     io.emit('trigger_action', actionData);
   });
 
+  // Client (slave or master) sends live floating reaction
+  socket.on('send_reaction', (reaction = {}) => {
+    const client = connectedClients.get(socket.id);
+    const senderName = client ? client.name : '現場親友';
+    io.emit('floating_reaction', {
+      emoji: reaction.emoji || '💖',
+      memberId: reaction.memberId || null,
+      senderName,
+      timestamp: Date.now()
+    });
+  });
+
   // Master adds/edits/reorders slides
   socket.on('master_update_slides', ({ newSlides, targetIndex = 0 }) => {
     const client = connectedClients.get(socket.id);
