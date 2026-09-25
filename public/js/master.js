@@ -1,4 +1,4 @@
-// Master Hub Controller Logic
+// Master Hub Controller Logic - Mobile First
 
 const socket = io();
 
@@ -22,11 +22,14 @@ const stageBanner = document.getElementById('stage-banner');
 const stageBadge = document.getElementById('stage-badge');
 const stageInteractive = document.getElementById('stage-interactive');
 const slideCounter = document.getElementById('slide-counter');
+const stageSwipeArea = document.getElementById('stage-swipe-area');
 
 const btnPrev = document.getElementById('btn-prev');
 const btnNext = document.getElementById('btn-next');
-const toggleAllowSelection = document.getElementById('toggle-allow-selection');
-const toggleShowResults = document.getElementById('toggle-show-results');
+const cardToggleSelection = document.getElementById('card-toggle-selection');
+const cardToggleResults = document.getElementById('card-toggle-results');
+const textSelectionStatus = document.getElementById('text-selection-status');
+const textResultsStatus = document.getElementById('text-results-status');
 
 const statsPanel = document.getElementById('stats-panel');
 const slideDeckList = document.getElementById('slide-deck-list');
@@ -35,36 +38,39 @@ const clientCountBadges = document.querySelectorAll('.client-count-badge');
 
 const qrModal = document.getElementById('qr-modal');
 const btnOpenQr = document.getElementById('btn-open-qr');
+const btnShowQrBig = document.getElementById('btn-show-qr-big');
 const btnCloseQr = document.getElementById('btn-close-qr');
 const slaveUrlDisplay = document.getElementById('slave-url-display');
 const qrContainer = document.getElementById('qr-code-box');
 
 const btnConfetti = document.getElementById('btn-confetti');
+const btnSpinWheelQuick = document.getElementById('btn-spin-wheel-quick');
 const btnBroadcast = document.getElementById('btn-broadcast');
+const btnBroadcastQuick = document.getElementById('btn-broadcast-quick');
 const broadcastModal = document.getElementById('broadcast-modal');
 const btnCloseBroadcast = document.getElementById('btn-close-broadcast');
 const btnSendBroadcast = document.getElementById('btn-send-broadcast');
 const broadcastInput = document.getElementById('broadcast-input');
 
-const btnAddSlide = document.getElementById('btn-add-slide');
 const btnResetPreset = document.getElementById('btn-reset-preset');
 
-// Tabs
-const tabButtons = document.querySelectorAll('.tab-btn');
-const tabPanes = document.querySelectorAll('.tab-pane');
+// Mobile Bottom Navigation Tabs
+const navTabItems = document.querySelectorAll('.nav-tab-item');
+const masterTabViews = document.querySelectorAll('.master-tab-view');
 
-// Setup Tabs Navigation
-tabButtons.forEach(btn => {
-  btn.addEventListener('click', () => {
-    tabButtons.forEach(b => b.classList.remove('active'));
-    tabPanes.forEach(p => p.classList.remove('active'));
-    btn.classList.add('active');
-    const target = document.getElementById(btn.dataset.tab);
-    if (target) target.classList.add('active');
+navTabItems.forEach(tab => {
+  tab.addEventListener('click', () => {
+    navTabItems.forEach(t => t.classList.remove('active'));
+    masterTabViews.forEach(v => v.classList.remove('active'));
+
+    tab.classList.add('active');
+    const targetId = tab.dataset.target;
+    const targetView = document.getElementById(targetId);
+    if (targetView) targetView.classList.add('active');
   });
 });
 
-// Initialization & Authentication
+// Authentication & Connection
 function tryJoinMaster(pin) {
   socket.emit('join', {
     role: 'master',
@@ -72,6 +78,12 @@ function tryJoinMaster(pin) {
     pin: pin
   });
 }
+
+socket.on('connect', () => {
+  if (savedPin) {
+    tryJoinMaster(savedPin);
+  }
+});
 
 btnLogin.addEventListener('click', () => {
   const pin = pinInput.value.trim();
@@ -88,18 +100,9 @@ pinInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') btnLogin.click();
 });
 
-// Auto-login on connect
-socket.on('connect', () => {
-  if (savedPin) {
-    tryJoinMaster(savedPin);
-  }
-});
-
-// Auto-login if previously saved
 if (savedPin) {
   tryJoinMaster(savedPin);
 } else {
-  // Pre-fill 8888 for smooth user testing
   pinInput.value = '8888';
 }
 
@@ -118,7 +121,272 @@ socket.on('master_init', (data) => {
   renderSlideDeck();
 });
 
-// Slide Management: Add and Delete Modals
+socket.on('master_telemetry_updated', (dashboard) => {
+  updateDashboard(dashboard);
+});
+
+socket.on('clients_updated', (data) => {
+  clientCountBadges.forEach(b => b.textContent = `${data.slavesCount} 賓客`);
+  renderClientsList(data.clientsList || []);
+});
+
+socket.on('submission_received', (data) => {
+  currentSummary = data.summary;
+  renderStats();
+  showToast(`📩 收到來自「${data.guestName}」的即時反饋！`);
+});
+
+socket.on('slides_reloaded', (data) => {
+  currentSlides = data.slides || [];
+  currentIndex = data.currentIndex || 0;
+  renderSlideDeck();
+  renderStage();
+});
+
+socket.on('trigger_action', (data) => {
+  if (data.action === 'confetti') {
+    fireConfetti();
+  }
+});
+
+// Update Dashboard View
+function updateDashboard(dashboard) {
+  if (!dashboard) return;
+  currentIndex = dashboard.currentIndex;
+  allowSelection = dashboard.allowSelection;
+  showResults = dashboard.showResults;
+  currentSummary = dashboard.summary;
+
+  updateToggleStateUI();
+
+  clientCountBadges.forEach(b => b.textContent = `${dashboard.slavesCount} 賓客`);
+  renderClientsList(dashboard.clientsList || []);
+
+  renderStage();
+  renderStats();
+  highlightActiveSlideInDeck();
+}
+
+function updateToggleStateUI() {
+  if (cardToggleSelection) {
+    if (allowSelection) {
+      cardToggleSelection.classList.add('active');
+      textSelectionStatus.textContent = '允許手機點選';
+    } else {
+      cardToggleSelection.classList.remove('active');
+      textSelectionStatus.textContent = '鎖定禁止作答';
+    }
+  }
+
+  if (cardToggleResults) {
+    if (showResults) {
+      cardToggleResults.classList.add('active');
+      textResultsStatus.textContent = '公開即時票數';
+    } else {
+      cardToggleResults.classList.remove('active');
+      textResultsStatus.textContent = '隱藏統計票數';
+    }
+  }
+}
+
+// Render Current Stage Preview
+function renderStage() {
+  const slide = currentSlides[currentIndex];
+  if (!slide) return;
+
+  slideCounter.textContent = `第 ${currentIndex + 1} / ${currentSlides.length} 頁`;
+  stageTitle.textContent = slide.title || '';
+  stageSubtitle.textContent = slide.subtitle || '';
+  stageDesc.textContent = slide.content || '';
+  stageBadge.textContent = slide.badge || '展示';
+
+  if (slide.imageUrl) {
+    stageBanner.src = slide.imageUrl;
+    stageBanner.style.display = 'block';
+  } else {
+    stageBanner.style.display = 'none';
+  }
+
+  renderStageInteractivePreview(slide);
+}
+
+function renderStageInteractivePreview(slide) {
+  stageInteractive.innerHTML = '';
+
+  if (slide.type === 'poll') {
+    let html = `<div style="font-weight:700;margin-bottom:6px;color:var(--accent-gold);">📊 題目選項預覽：</div><div style="display:flex;flex-direction:column;gap:5px;">`;
+    (slide.options || []).forEach(opt => {
+      html += `<div style="padding:6px 10px;background:rgba(255,255,255,0.06);border-radius:6px;font-size:12px;">${opt.text}</div>`;
+    });
+    html += `</div>`;
+    stageInteractive.innerHTML = html;
+  } else if (slide.type === 'menu') {
+    let count = 0;
+    (slide.menuCategories || []).forEach(c => count += (c.items || []).length);
+    stageInteractive.innerHTML = `
+      <div style="color:var(--accent-gold);font-weight:700;">🍽️ 特選菜單點選</div>
+      <div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">
+        共有 ${(slide.menuCategories || []).length} 個分類、${count} 道特選料理供賓客勾選。
+      </div>
+    `;
+  } else if (slide.type === 'lucky_wheel') {
+    stageInteractive.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="color:var(--accent-gold);font-weight:700;">🎡 幸運大轉盤</div>
+          <div style="font-size:12px;color:var(--text-secondary);">獎項數：${(slide.prizes || []).length} 個</div>
+        </div>
+        <button id="btn-spin-wheel-in-stage" class="btn btn-primary" style="font-size:12px;padding:6px 14px;">
+          🎯 旋轉開獎
+        </button>
+      </div>
+    `;
+    const spinBtn = document.getElementById('btn-spin-wheel-in-stage');
+    if (spinBtn) {
+      spinBtn.addEventListener('click', triggerWheelSpin);
+    }
+  } else if (slide.type === 'rating') {
+    stageInteractive.innerHTML = `
+      <div style="color:var(--accent-gold);font-weight:700;">⭐ 星級評價與祝福</div>
+      <div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">
+        開放賓客手機端進行 1~5 星評分與溫馨留言。
+      </div>
+    `;
+  } else {
+    stageInteractive.innerHTML = `
+      <div style="color:var(--text-muted);font-size:12px;">
+        🖼️ 一般內容展示頁（全體手機鏡像同步呈現）
+      </div>
+    `;
+  }
+}
+
+// Navigation Controls
+btnPrev.addEventListener('click', () => {
+  if (currentIndex > 0) {
+    socket.emit('master_change_slide', { index: currentIndex - 1 });
+  }
+});
+
+btnNext.addEventListener('click', () => {
+  if (currentIndex < currentSlides.length - 1) {
+    socket.emit('master_change_slide', { index: currentIndex + 1 });
+  }
+});
+
+// Touch Swipe Gestures on Mobile Stage
+let touchStartX = 0;
+let touchStartY = 0;
+if (stageSwipeArea) {
+  stageSwipeArea.addEventListener('touchstart', (e) => {
+    touchStartX = e.changedTouches[0].screenX;
+    touchStartY = e.changedTouches[0].screenY;
+  }, { passive: true });
+
+  stageSwipeArea.addEventListener('touchend', (e) => {
+    const diffX = e.changedTouches[0].screenX - touchStartX;
+    const diffY = e.changedTouches[0].screenY - touchStartY;
+    // Only detect horizontal swipe if movement is primarily horizontal
+    if (Math.abs(diffX) > 50 && Math.abs(diffX) > Math.abs(diffY)) {
+      if (diffX < 0) {
+        // Swiped Left -> Next Slide
+        btnNext.click();
+      } else {
+        // Swiped Right -> Prev Slide
+        btnPrev.click();
+      }
+    }
+  }, { passive: true });
+}
+
+// Toggle Buttons
+cardToggleSelection.addEventListener('click', () => {
+  allowSelection = !allowSelection;
+  socket.emit('master_toggle_selection', { enabled: allowSelection });
+  updateToggleStateUI();
+});
+
+cardToggleResults.addEventListener('click', () => {
+  showResults = !showResults;
+  socket.emit('master_toggle_results', { show: showResults });
+  updateToggleStateUI();
+});
+
+// Quick Action Triggers
+btnConfetti.addEventListener('click', () => {
+  socket.emit('master_trigger_action', { action: 'confetti' });
+  fireConfetti();
+  showToast('🎊 施放全螢幕歡慶彩帶！');
+});
+
+btnSpinWheelQuick.addEventListener('click', triggerWheelSpin);
+
+function triggerWheelSpin() {
+  const slide = currentSlides[currentIndex];
+  if (!slide || slide.type !== 'lucky_wheel' || !slide.prizes || slide.prizes.length === 0) {
+    showToast('💡 提示：請先將投影片切換至「幸運大轉盤」頁面！');
+    return;
+  }
+
+  const prizeIndex = Math.floor(Math.random() * slide.prizes.length);
+  const winningPrize = slide.prizes[prizeIndex];
+
+  socket.emit('master_trigger_action', {
+    action: 'wheel_spin',
+    prizeIndex,
+    winningPrize
+  });
+  showToast(`🎡 轉盤啟動！正在開出幸運獎項...`);
+}
+
+btnBroadcast.addEventListener('click', () => {
+  broadcastModal.classList.add('show');
+  broadcastInput.focus();
+});
+btnBroadcastQuick.addEventListener('click', () => {
+  broadcastModal.classList.add('show');
+  broadcastInput.focus();
+});
+btnCloseBroadcast.addEventListener('click', () => {
+  broadcastModal.classList.remove('show');
+});
+
+btnSendBroadcast.addEventListener('click', () => {
+  const text = broadcastInput.value.trim();
+  if (text) {
+    socket.emit('master_broadcast_notice', { message: text });
+    showToast(`📢 已向全場廣播：「${text}」`);
+    broadcastInput.value = '';
+    broadcastModal.classList.remove('show');
+  }
+});
+
+// QR Code Modal
+function openQrModal() {
+  const slaveUrl = `${window.location.origin}/slave.html`;
+  slaveUrlDisplay.textContent = slaveUrl;
+  qrContainer.innerHTML = '';
+
+  if (window.QRCode) {
+    new QRCode(qrContainer, {
+      text: slaveUrl,
+      width: 190,
+      height: 190,
+      colorDark: "#0a0d14",
+      colorLight: "#ffffff",
+      correctLevel: QRCode.CorrectLevel.M
+    });
+  } else {
+    qrContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=190x190&data=${encodeURIComponent(slaveUrl)}" alt="QR Code" width="190" height="190" />`;
+  }
+  qrModal.classList.add('show');
+}
+
+btnOpenQr.addEventListener('click', openQrModal);
+if (btnShowQrBig) btnShowQrBig.addEventListener('click', openQrModal);
+btnCloseQr.addEventListener('click', () => qrModal.classList.remove('show'));
+
+// Slide Management: Add and Delete
 const addSlideModal = document.getElementById('add-slide-modal');
 const btnOpenAddSlide = document.getElementById('btn-add-slide-modal');
 const btnCancelAddSlide = document.getElementById('btn-cancel-add-slide');
@@ -171,7 +439,7 @@ if (btnConfirmAddSlide) {
       type,
       title,
       subtitle,
-      badge: type === 'poll' ? '即時票選' : (type === 'rating' ? '心得回饋' : '特別推薦'),
+      badge: type === 'poll' ? '即時票選' : (type === 'rating' ? '心得回饋' : '自訂展示'),
       content,
       imageUrl
     };
@@ -193,7 +461,7 @@ if (btnConfirmAddSlide) {
     });
 
     addSlideModal.classList.remove('show');
-    showToast('✅ 已成功新增自訂頁面！');
+    showToast('✅ 已成功新增頁面！');
   });
 }
 
@@ -217,159 +485,15 @@ if (btnDeleteCurrentSlide) {
   });
 }
 
-socket.on('master_telemetry_updated', (dashboard) => {
-  updateDashboard(dashboard);
-});
-
-socket.on('clients_updated', (data) => {
-  clientCountBadges.forEach(b => b.textContent = `${data.slavesCount} 賓客`);
-  renderClientsList(data.clientsList || []);
-});
-
-socket.on('submission_received', (data) => {
-  currentSummary = data.summary;
-  renderStats();
-  showToast(`📩 收到來自「${data.guestName}」的即時反饋！`);
-});
-
-socket.on('slides_reloaded', (data) => {
-  currentSlides = data.slides || [];
-  currentIndex = data.currentIndex || 0;
-  renderSlideDeck();
-  renderStage();
-});
-
-socket.on('trigger_action', (data) => {
-  if (data.action === 'confetti') {
-    fireConfetti();
+btnResetPreset.addEventListener('click', () => {
+  if (confirm('確定要載入「溫馨闔家盛宴」預設範本嗎？')) {
+    const preset = window.SLIDE_PRESETS?.banquet?.slides || [];
+    socket.emit('master_update_slides', { newSlides: preset, targetIndex: 0 });
+    showToast('✅ 已成功載入盛宴預設範本！');
   }
 });
 
-// Dashboard Rendering
-function updateDashboard(dashboard) {
-  if (!dashboard) return;
-  currentIndex = dashboard.currentIndex;
-  allowSelection = dashboard.allowSelection;
-  showResults = dashboard.showResults;
-  currentSummary = dashboard.summary;
-
-  toggleAllowSelection.checked = allowSelection;
-  toggleShowResults.checked = showResults;
-
-  clientCountBadges.forEach(b => b.textContent = `${dashboard.slavesCount} 賓客`);
-  renderClientsList(dashboard.clientsList || []);
-
-  renderStage();
-  renderStats();
-  highlightActiveSlideInDeck();
-}
-
-function renderStage() {
-  const slide = currentSlides[currentIndex];
-  if (!slide) return;
-
-  slideCounter.textContent = `第 ${currentIndex + 1} / ${currentSlides.length} 頁`;
-  stageTitle.textContent = slide.title || '';
-  stageSubtitle.textContent = slide.subtitle || '';
-  stageDesc.textContent = slide.content || '';
-  stageBadge.textContent = slide.badge || '展示';
-
-  if (slide.imageUrl) {
-    stageBanner.src = slide.imageUrl;
-    stageBanner.style.display = 'block';
-  } else {
-    stageBanner.style.display = 'none';
-  }
-
-  // Render interactive preview in stage
-  renderStageInteractivePreview(slide);
-}
-
-function renderStageInteractivePreview(slide) {
-  stageInteractive.innerHTML = '';
-
-  if (slide.type === 'poll') {
-    let html = `<div style="font-weight:700;margin-bottom:8px;color:var(--accent-gold);">📊 投票題目預覽 (賓客端可點擊)：</div><div style="display:flex;flex-direction:column;gap:6px;">`;
-    (slide.options || []).forEach(opt => {
-      html += `<div style="padding:8px 12px;background:rgba(255,255,255,0.05);border-radius:6px;font-size:13px;">${opt.text}</div>`;
-    });
-    html += `</div>`;
-    stageInteractive.innerHTML = html;
-  } else if (slide.type === 'menu') {
-    let count = 0;
-    (slide.menuCategories || []).forEach(c => count += (c.items || []).length);
-    stageInteractive.innerHTML = `
-      <div style="color:var(--accent-gold);font-weight:700;">🍽️ 菜單點選模式</div>
-      <div style="font-size:13px;color:var(--text-secondary);margin-top:4px;">
-        共有 ${(slide.menuCategories || []).length} 個分類、${count} 道特選料理開放賓客勾選。
-      </div>
-    `;
-  } else if (slide.type === 'lucky_wheel') {
-    stageInteractive.innerHTML = `
-      <div style="display:flex;align-items:center;justify-content:space-between;">
-        <div>
-          <div style="color:var(--accent-gold);font-weight:700;">🎡 幸運大轉盤</div>
-          <div style="font-size:13px;color:var(--text-secondary);">共有 ${(slide.prizes || []).length} 個獎項</div>
-        </div>
-        <button id="btn-spin-wheel" class="btn btn-primary">
-          🎯 啟動同步旋轉
-        </button>
-      </div>
-    `;
-    const spinBtn = document.getElementById('btn-spin-wheel');
-    if (spinBtn) {
-      spinBtn.addEventListener('click', triggerWheelSpin);
-    }
-  } else if (slide.type === 'rating') {
-    stageInteractive.innerHTML = `
-      <div style="color:var(--accent-gold);font-weight:700;">⭐ 星級評價與祝福</div>
-      <div style="font-size:13px;color:var(--text-secondary);margin-top:4px;">
-        開放 1~5 顆星滿意度評價及溫馨留言反饋。
-      </div>
-    `;
-  } else {
-    stageInteractive.innerHTML = `
-      <div style="color:var(--text-muted);font-size:13px;">
-        🖼️ 一般內容展示頁（從屬端將以極致排版全螢幕呈現）
-      </div>
-    `;
-  }
-}
-
-// Stage Navigation Controls
-btnPrev.addEventListener('click', () => {
-  if (currentIndex > 0) {
-    socket.emit('master_change_slide', { index: currentIndex - 1 });
-  }
-});
-
-btnNext.addEventListener('click', () => {
-  if (currentIndex < currentSlides.length - 1) {
-    socket.emit('master_change_slide', { index: currentIndex + 1 });
-  }
-});
-
-// Keyboard Controls (Left, Right, Space)
-window.addEventListener('keydown', (e) => {
-  if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
-  if (e.key === 'ArrowRight' || e.key === ' ') {
-    e.preventDefault();
-    btnNext.click();
-  } else if (e.key === 'ArrowLeft') {
-    e.preventDefault();
-    btnPrev.click();
-  }
-});
-
-toggleAllowSelection.addEventListener('change', () => {
-  socket.emit('master_toggle_selection', { enabled: toggleAllowSelection.checked });
-});
-
-toggleShowResults.addEventListener('change', () => {
-  socket.emit('master_toggle_results', { show: toggleShowResults.checked });
-});
-
-// Render Stats & Telemetry
+// Render Live Stats
 function renderStats() {
   const slide = currentSlides[currentIndex];
   if (!slide) return;
@@ -377,10 +501,10 @@ function renderStats() {
   if (!currentSummary || currentSummary.totalCount === 0) {
     statsPanel.innerHTML = `
       <div class="stat-summary-card" style="text-align:center;padding:32px 16px;">
-        <div style="font-size:32px;margin-bottom:8px;">⏳</div>
+        <div style="font-size:36px;margin-bottom:8px;">⏳</div>
         <div style="font-weight:700;color:var(--text-primary);">尚無賓客反饋資料</div>
-        <div style="font-size:13px;color:var(--text-muted);margin-top:4px;">
-          請確保「開放作答」已開啟，賓客送出後將即時在此動態展示！
+        <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">
+          請確保「開放作答」已開啟，賓客送出後將即時在此呈現！
         </div>
       </div>
     `;
@@ -415,8 +539,7 @@ function renderStats() {
     html += `<div style="font-size:13px;font-weight:700;margin-bottom:8px;color:var(--accent-gold);">人氣菜色點選榜：</div>`;
     const counts = currentSummary.dishCounts || {};
     const sortedEntries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
-    
-    // Map id to name
+
     const dishMap = {};
     (slide.menuCategories || []).forEach(cat => {
       cat.items.forEach(d => { dishMap[d.id] = d.name; });
@@ -453,8 +576,8 @@ function renderStats() {
   // Voter details breakdown
   if (currentSummary.submissions && currentSummary.submissions.length > 0) {
     html += `
-      <div style="margin-top:16px;border-top:1px solid var(--border-color);padding-top:12px;">
-        <div style="font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:8px;">即時參與明細：</div>
+      <div style="margin-top:14px;border-top:1px solid var(--border-color);padding-top:10px;">
+        <div style="font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:8px;">即時明細清單：</div>
         <div style="display:flex;flex-direction:column;gap:6px;max-height:160px;overflow-y:auto;">
     `;
     currentSummary.submissions.forEach(sub => {
@@ -469,7 +592,7 @@ function renderStats() {
         detailText = `點選了 ${selected.length} 道菜`;
       }
       html += `
-        <div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 8px;background:rgba(255,255,255,0.03);border-radius:4px;">
+        <div style="display:flex;justify-content:space-between;font-size:12px;padding:6px 10px;background:rgba(255,255,255,0.04);border-radius:4px;">
           <span style="font-weight:600;">${sub.guestName}</span>
           <span style="color:var(--accent-gold);">${detailText}</span>
         </div>
@@ -482,7 +605,7 @@ function renderStats() {
   statsPanel.innerHTML = html;
 }
 
-// Slide Deck Thumbnail List
+// Slide Deck List
 function renderSlideDeck() {
   slideDeckList.innerHTML = '';
   currentSlides.forEach((slide, idx) => {
@@ -497,6 +620,8 @@ function renderSlideDeck() {
     `;
     item.addEventListener('click', () => {
       socket.emit('master_change_slide', { index: idx });
+      // Switch back to stage tab for immediate view
+      document.querySelector('.nav-tab-item[data-target="view-stage"]')?.click();
     });
     slideDeckList.appendChild(item);
   });
@@ -518,8 +643,8 @@ function renderClientsList(clients) {
   const slaves = clients.filter(c => c.role === 'slave');
   if (slaves.length === 0) {
     clientsList.innerHTML = `
-      <div style="text-align:center;padding:24px;color:var(--text-muted);font-size:13px;">
-        目前尚無賓客裝置連線，請點擊右上角「QR Code」邀請手機掃描加入！
+      <div style="text-align:center;padding:20px;color:var(--text-muted);font-size:13px;">
+        目前尚無賓客手機連線，請點擊上方「連線 QR Code」讓親友掃描加入！
       </div>
     `;
     return;
@@ -528,7 +653,7 @@ function renderClientsList(clients) {
   let html = `<div style="display:flex;flex-direction:column;gap:8px;">`;
   slaves.forEach(slave => {
     html += `
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:rgba(255,255,255,0.03);border:1px solid var(--border-color);border-radius:var(--radius-sm);">
+      <div class="guest-item-card">
         <div style="display:flex;align-items:center;gap:10px;">
           <span class="live-dot"></span>
           <span style="font-weight:600;font-size:14px;">${slave.name}</span>
@@ -541,82 +666,6 @@ function renderClientsList(clients) {
   clientsList.innerHTML = html;
 }
 
-// QR Code Modal
-btnOpenQr.addEventListener('click', () => {
-  const slaveUrl = `${window.location.origin}/slave.html`;
-  slaveUrlDisplay.textContent = slaveUrl;
-  qrContainer.innerHTML = '';
-  
-  if (window.QRCode) {
-    new QRCode(qrContainer, {
-      text: slaveUrl,
-      width: 200,
-      height: 200,
-      colorDark: "#0a0d14",
-      colorLight: "#ffffff",
-      correctLevel: QRCode.CorrectLevel.M
-    });
-  } else {
-    qrContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(slaveUrl)}" alt="QR Code" width="200" height="200" />`;
-  }
-  qrModal.classList.add('show');
-});
-
-btnCloseQr.addEventListener('click', () => {
-  qrModal.classList.remove('show');
-});
-
-// Broadcast Modal
-btnBroadcast.addEventListener('click', () => {
-  broadcastModal.classList.add('show');
-  broadcastInput.focus();
-});
-
-btnCloseBroadcast.addEventListener('click', () => {
-  broadcastModal.classList.remove('show');
-});
-
-btnSendBroadcast.addEventListener('click', () => {
-  const text = broadcastInput.value.trim();
-  if (text) {
-    socket.emit('master_broadcast_notice', { message: text });
-    showToast(`📢 已向全場廣播：「${text}」`);
-    broadcastInput.value = '';
-    broadcastModal.classList.remove('show');
-  }
-});
-
-// Actions: Confetti & Lucky Wheel Spin
-btnConfetti.addEventListener('click', () => {
-  socket.emit('master_trigger_action', { action: 'confetti' });
-  fireConfetti();
-  showToast('🎊 施放全螢幕歡慶彩帶！');
-});
-
-function triggerWheelSpin() {
-  const slide = currentSlides[currentIndex];
-  if (!slide || slide.type !== 'lucky_wheel' || !slide.prizes || slide.prizes.length === 0) return;
-
-  const prizeIndex = Math.floor(Math.random() * slide.prizes.length);
-  const winningPrize = slide.prizes[prizeIndex];
-
-  socket.emit('master_trigger_action', {
-    action: 'wheel_spin',
-    prizeIndex,
-    winningPrize
-  });
-  showToast(`🎡 轉盤啟動中！即將開出獎項...`);
-}
-
-// Reset Presets
-btnResetPreset.addEventListener('click', () => {
-  if (confirm('確定要載入「溫馨闔家盛宴」預設投影片範本嗎？')) {
-    const preset = window.SLIDE_PRESETS?.banquet?.slides || [];
-    socket.emit('master_update_slides', { newSlides: preset, targetIndex: 0 });
-    showToast('✅ 已成功還原並載入盛宴預設範本！');
-  }
-});
-
 // Toast Helper
 function showToast(message) {
   const toast = document.getElementById('broadcast-toast');
@@ -628,7 +677,7 @@ function showToast(message) {
   }, 4000);
 }
 
-// Confetti Animation Engine
+// Confetti Engine
 function fireConfetti() {
   const canvas = document.getElementById('confetti-canvas');
   if (!canvas) return;
@@ -639,14 +688,14 @@ function fireConfetti() {
   const particles = [];
   const colors = ['#f59e0b', '#ef4444', '#10b981', '#3b82f6', '#ec4899', '#fbbf24'];
 
-  for (let i = 0; i < 120; i++) {
+  for (let i = 0; i < 90; i++) {
     particles.push({
       x: canvas.width / 2,
-      y: canvas.height / 2,
-      w: Math.random() * 10 + 6,
-      h: Math.random() * 6 + 4,
-      vx: (Math.random() - 0.5) * 20,
-      vy: (Math.random() - 0.7) * 22,
+      y: canvas.height * 0.45,
+      w: Math.random() * 8 + 5,
+      h: Math.random() * 5 + 3,
+      vx: (Math.random() - 0.5) * 16,
+      vy: (Math.random() - 0.7) * 18,
       color: colors[Math.floor(Math.random() * colors.length)],
       tilt: Math.random() * 10,
       tiltSpeed: (Math.random() - 0.5) * 0.2,
@@ -661,9 +710,9 @@ function fireConfetti() {
     particles.forEach(p => {
       p.x += p.vx;
       p.y += p.vy;
-      p.vy += 0.45; // gravity
+      p.vy += 0.45;
       p.tilt += p.tiltSpeed;
-      p.alpha -= 0.008;
+      p.alpha -= 0.009;
 
       if (p.alpha > 0) {
         alive = true;

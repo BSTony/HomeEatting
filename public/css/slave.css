@@ -2,11 +2,13 @@
 
 .slave-app {
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   position: relative;
   z-index: 1;
-  padding-bottom: 40px;
+  padding-bottom: calc(36px + env(safe-area-inset-bottom, 16px));
+  touch-action: manipulation;
 }
 
 /* Slave Sticky Header */
